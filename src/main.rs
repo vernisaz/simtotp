@@ -2,9 +2,9 @@
 Below is an example of Rust code for generating a TOTP.
 */
 // src/main.rs
+extern crate base32;
 mod sha1;
 mod hmac;
-//use hmac::{Hmac, Mac};
 use sha1::Sha1;
 use std::time::{SystemTime, UNIX_EPOCH};
 use hmac::hmac;
@@ -31,13 +31,10 @@ pub fn generate_totp(secret: &[u8], digits: u32, step_seconds: u64) -> Option<u3
 
     // Convert the time step to an 8-byte big-endian array.
     let time_bytes = time_step.to_be_bytes();
-    /*
-    let mut mac = HmacSha1::new_from_slice(secret).ok()?;
-    mac.update(&time_bytes);
-*/
-    let result = hmac(secret, &time_bytes, 64); //mac.finalize();
+
+    let result = hmac(secret, &time_bytes, 64); 
     
-    let code = hotp_from_hmac(&result, digits); // .bytes().as_slice()
+    let code = hotp_from_hmac(&result, digits); 
 
     Some(code)
 }
@@ -56,15 +53,34 @@ fn hotp_from_hmac(hmac_result: &[u8], digits: u32) -> u32 {
     otp % power_of_10
 }
 
+use base32::Alphabet;
+use std::env;
 fn main() {
+   #[cfg(test)]
+    {
     let test = hmac(b"key", b"The quick brown fox jumps over the lazy dog", 64);
     eprintln!("code 0x{}", simweb::to_hex(&test));
-    // Example usage
-    let secret = b"Some secret is here";
+    }
+    let web = simweb::WebData::new();
+    let secret;
+    match web.param("secret") {
+        Some(web_secret) => {
+            secret = base32::decode(Alphabet::Rfc4648 { padding: false }, &web_secret).unwrap();
+        }
+        None => {
+            let args: Vec<String> = env::args().collect();
+            if args.len() == 0  {
+                eprintln!("No program arguments from web and CLI");
+                std::process::exit(1)
+            }
+            secret =  base32::decode(Alphabet::Rfc4648 { padding: false }, &args[0]).unwrap();
+        }
+    }
+
     let digits = 6;
     let step = 30;
 
-    match generate_totp(secret, digits, step) {
+    match generate_totp(&secret, digits, step) {
         Some(code) => {
             println!("Current TOTP code: {:0>width$}", code, width = digits as usize);
         }
