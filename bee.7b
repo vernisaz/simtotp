@@ -1,0 +1,8 @@
+project  =simtotp
+main=src${~/~}main
+common =..${~/~}simscript${~/~}comm-build.7b:file
+crate_dir=..${~/~}crates
+comp opts=[--extern, simweb]
+display(de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9)
+#
+include(common);
