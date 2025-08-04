@@ -121,7 +121,7 @@ fn main() -> io::Result<()> {
     }// else {eprintln!("{:?}", env::var("QUERY_STRING"));}
 
     let web = simweb::WebData::new();
-    let password;
+    let mut password;
     match web.param("pass") {
         Some(pass) => { password = pass; }
         _ => {
@@ -195,7 +195,7 @@ fn main() -> io::Result<()> {
                 }
             }
             if !done {
-                 json = r#"{"error":"Insaficient info to generate TOTP code."}"#;
+                 json = r#"{"error":"Insufficient info to generate TOTP code."}"#;
             }
         }
         "adac" => { // add an account with a secret
@@ -204,7 +204,7 @@ fn main() -> io::Result<()> {
                 if let Some(acn) = web.param("account") {
                     if let Some(secret) = web.param("secret") {
                         if let Some(ns) = namespaces.get_mut(&name) {
-                            // TODO if no such account
+                            
                             ns.insert(acn, secret);
                         } else {
                             let mut ns = HashMap::new();
@@ -218,25 +218,112 @@ fn main() -> io::Result<()> {
                 }
             }
             if !done {
-                 json = r#"{"error":"Insaficient info to add an account."}"#;
+                 json = r#"{"error":"Insufficient info to add an account."}"#;
             } else {
                 
             }
         }
-        "sese" => { // set a secret for an account
-            json = r#"{"error":"TBI"}"#;
+        "upse" => { // update a secret for an account
+            let mut done = false;
+            if let Some(name) = web.param("name") {
+                if let Some(acn) = web.param("account") {
+                    if let Some(secret) = web.param("secret") {
+                        if let Some(ns) = namespaces.get_mut(&name) {
+                            if !secret.is_empty() {
+                                // TODO if no such account
+                                ns.insert(acn, secret);
+                                done = true;
+                                update_db = true;
+                                json = r#"{"ok":true}"#;
+                            }
+                        }
+                    }
+                }
+            }
+            if !done {
+                 json = r#"{"error":"Insufficient info to update the secret."}"#;
+            }
         }
         "deac" => { // delete an account
-            json = r#"{"error":"TBI"}"#;
+            let mut done = false;
+            if let Some(name) = web.param("name") {
+                if let Some(acn) = web.param("account") {
+                    if let Some(ns) = namespaces.get_mut(&name) {
+                        if ns.remove(&acn).is_some() {
+                            done = true;
+                            update_db = true;
+                            json = r#"{"ok":true}"#;
+                        }
+                    }
+                }
+            }
+            if !done {
+                 json = r#"{"error":"No such account."}"#;
+            }
         }
         "dens" => { // delete a namespace
-            json = r#"{"error":"TBI"}"#;
+            let mut done = false;
+            if let Some(name) = web.param("name") {
+                if namespaces.remove(&name).is_some() {
+                    done = true;
+                    update_db = true;
+                    json = r#"{"ok":true}"#;
+                }
+            }
+            if !done {
+                 json = r#"{"error":"No such namespace."}"#;
+            }
         }
         "mons" => { // modify a namespace name
-            json = r#"{"error":"TBI"}"#;
+            let mut done = false;
+            if let Some(name) = web.param("name") {
+                if let Some(new_name) = web.param("newname") {
+                    if let Some(ns) = namespaces.remove(&name) {
+                        namespaces.insert(new_name, ns);
+                        
+                        done = true;
+                        update_db = true;
+                        json = r#"{"ok":true}"#;
+                    }
+                }
+            }
+            if !done {
+                 json = r#"{"error":"No such namespace."}"#;
+            }
         }
         "moac" => { // modify an account name
-            json = r#"{"error":"TBI"}"#;
+            let mut done = false;
+            if let Some(name) = web.param("name") {
+                if let Some(acn) = web.param("account") {
+                    if let Some(new_name) = web.param("newname") {
+                        if let Some(ns) = namespaces.get_mut(&name) {
+                            if !new_name.is_empty() {
+                                let secret = ns.remove(&acn);
+                                if let Some(secret) = secret {
+                                    ns.insert(new_name, secret);
+                                    done = true;
+                                    update_db = true;
+                                    json = r#"{"ok":true}"#;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if !done {
+                 json = r#"{"error":"No update the account."}"#;
+            }
+        }
+        "uppa" => { // update password
+            if let Some(pass) = web.param("newpassword") {
+                if !pass.is_empty() {
+                    update_db = true;
+                    password = pass;
+                    json = r#"{"ok":true}"#;
+                } else {
+                    json = r#"{"error":"no new password"}"#;
+                }
+            }
         }
         _ => { // op error
             json = r#"{"error":"unknown op"}"#;
@@ -303,9 +390,12 @@ fn write_db(home: &PathBuf, password: &str, db: HashMap<String, HashMap<String,S
     let mut res = String::from("{");
     //write!(res,"{{").unwrap();
     for (key, value) in db.iter() {
+        if key.is_empty() { continue }
         write!(res,r#""{key}":{{"#).unwrap();
         for (acn, secret) in value.iter() {
-             write!(res,r#""{acn}":"{secret}","#).unwrap();
+            if !acn.is_empty() {
+                 write!(res,r#""{acn}":"{secret}","#).unwrap();
+            }
         }
         // no json encodibg
         write!(res,r#""":""}},"#).unwrap();
