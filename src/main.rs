@@ -3,12 +3,15 @@ Below is an example of Rust code for generating a TOTP.
 */
 // src/main.rs
 extern crate base32;
+extern crate simweb;
+extern crate simjson;
 mod sha1;
 mod hmac;
 use sha1::Sha1;
 use std::time::{SystemTime, UNIX_EPOCH};
 use hmac::hmac;
-//type HmacSha1 = Hmac<Sha1>;
+use simweb::WebPage;
+use simjson::{JsonData::{self}};
 
 /// Generates a TOTP code.
 ///
@@ -54,41 +57,268 @@ fn hotp_from_hmac(hmac_result: &[u8], digits: u32) -> u32 {
 }
 
 use base32::Alphabet;
-use std::env;
-fn main() {
+use std::{env, fs::{self, read_to_string}, path::{PathBuf}, io, collections::HashMap,
+    fmt::Write,
+};
+struct Response<'a> {
+    json: &'a str,
+}
+fn main() -> io::Result<()> {
    #[cfg(test)]
     {
     let test = hmac(b"key", b"The quick brown fox jumps over the lazy dog", 64);
     eprintln!("code 0x{}", simweb::to_hex(&test));
     }
-    let web = simweb::WebData::new();
-    let secret;
-    match web.param("secret") {
-        Some(web_secret) => {
-            secret = base32::decode(Alphabet::Rfc4648 { padding: false }, &web_secret).unwrap();
-        }
-        None => {
-            let args: Vec<String> = env::args().collect();
-            if args.len() == 0  {
-                eprintln!("No program arguments from web and CLI");
-                std::process::exit(1)
+    let totp = std::env::current_exe();
+    
+    let mut home = PathBuf::new();
+    let mut home_set = false;
+    if let Ok(ws_exe) = totp {
+        if let Some(current_path) = ws_exe.parent() {
+            let home_file = current_path.join(".home");
+            if let Ok(home_str) = read_to_string(&home_file) {
+                home = PathBuf::from(home_str.trim());
+                home_set = true;
+            } else {
+                eprintln! {"Misconfiguration: HOME isn't set in .home in {:?} yet", &home_file};
+                match std::env::home_dir() {
+                    Some(dir) => {
+                        fs::write(&home_file, &dir.display().to_string())?;
+                        home = dir;
+                        home_set = true
+                    }
+                    None => {
+                        // more likelly web mode and home not set
+                    }
+                }
             }
-            secret =  base32::decode(Alphabet::Rfc4648 { padding: false }, &args[0]).unwrap();
+        } 
+    }
+    if !home_set {
+        match std::env::home_dir() {
+                Some(dir) => {
+                    home = dir
+                }
+                None => {
+                    eprintln!("Can't obtain HOME from env or file, exiting");
+                    std::process::exit(1)
+                }
         }
     }
-
-    let digits = 6;
-    let step = 30;
-
-    match generate_totp(&secret, digits, step) {
-        Some(code) => {
-            println!("Current TOTP code: {:0>width$}", code, width = digits as usize);
+    home.push(".simtotp");
+    if std::env::var("QUERY_STRING").is_err() {
+        // CLI mode
+        let args: Vec<String> = env::args().collect();
+        if args.len() <= 3  {
+            eprintln!("No program arguments from web or CLI");
+            std::process::exit(1)
         }
-        None => {
-            println!("Failed to generate TOTP code.");
+        let query_str = format!("pass={}&op={}&name={}&account={}&secret={}",
+            simweb::url_encode(&args[1]), args[2], if args.len() > 3 {simweb::url_encode(&args[3])} else {"".to_string()},
+            if args.len() > 4 {simweb::url_encode(&args[4])} else {"".to_string()}, if args.len() > 5 {args[5].clone()} else {"".to_string()});
+        eprintln!("{query_str}");
+        env::set_var("QUERY_STRING",query_str)
+    }// else {eprintln!("{:?}", env::var("QUERY_STRING"));}
+
+    let web = simweb::WebData::new();
+    let password;
+    match web.param("pass") {
+        Some(pass) => { password = pass; }
+        _ => {
+            Response {
+                json:r#"{"error":"no password"}"#,
+            }.show();
+            return Ok(())
         }
+    }
+    let mut namespaces = read_db(&home, &password);
+    let mut json:&str = "{}";
+    let mut update_db = false;
+    let op = web.param("op").unwrap_or(String::new());
+    let mut res = String::new();
+    let code_str: String;
+    match op.as_str() {
+        "lsns" => { // list of namespaces
+            let mut res = String::from("[");
+            for (ns,_) in &namespaces {
+                // json encoding ?
+                write!(res,r#""{ns}","#).unwrap();
+            }
+            write!(res,r#"""]"#).unwrap();
+        }
+        "lsac" => { // list of accounts in a namespace
+            match web.param("name") {
+                Some(ns) => {
+                    let acns = namespaces.get(&ns);
+                        if let Some(acns) = acns {
+                        //let mut res = String::from("[");
+                        res.push('[');
+                        for (acn,_) in acns {
+                            // json encoding ?
+                            write!(res,r#""{acn}","#).unwrap();
+                        }
+                        write!(res,r#"""]"#).unwrap();
+                        json = &res
+                    } else { json = r#"{"error":"no namespace"}"# }
+                }
+                _ => json = r#"{"error":"no namespace name"}"#,
+            }
+        }
+        "gen" => { // generate TOTP code
+            let mut done = false;
+            if let Some(name) = web.param("name") {
+                if let Some(acn) = web.param("account") {
+                    //let secret;
+                    if let Some(ns) = namespaces.get(&name) {
+                        if let Some(web_secret) = ns.get(&acn) {
+                            let digits = 6;
+                            let step = 30;
+                            let secret;
+                            secret = base32::decode(Alphabet::Rfc4648 { padding: false }, &web_secret).unwrap();
+
+                            done = true;
+                            match generate_totp(&secret, digits, step) {
+                                Some(code) => {
+                                    code_str = format!(r#"{{"code":"{:0>width$}"}}"#, code, width = digits as usize);
+                                    json = &code_str;
+                                    eprintln!("Current TOTP code: {:0>width$}", code, width = digits as usize);
+                                }
+                                None => {
+                                    json = r#"{"error":"Failed to generate TOTP code."}"#;
+                                    eprintln!("Failed to generate TOTP code.");
+                                }
+                            }
+                        }
+                    } else {
+                        eprintln!("no namespace {name} in {namespaces:?}")
+                    }
+                }
+            }
+            if !done {
+                 json = r#"{"error":"Insaficient info to generate TOTP code."}"#;
+            }
+        }
+        "adac" => { // add an account with a secret
+            let mut done = false;
+            if let Some(name) = web.param("name") {
+                if let Some(acn) = web.param("account") {
+                    if let Some(secret) = web.param("secret") {
+                        if let Some(ns) = namespaces.get_mut(&name) {
+                            // TODO if no such account
+                            ns.insert(acn, secret);
+                        } else {
+                            let mut ns = HashMap::new();
+                            ns.insert(acn, secret);
+                            namespaces.insert(name.clone(),ns);
+                        }
+                        done = true;
+                        update_db = true;
+                        json = r#"{"ok":true}"#;
+                    }
+                }
+            }
+            if !done {
+                 json = r#"{"error":"Insaficient info to add an account."}"#;
+            } else {
+                
+            }
+        }
+        "sese" => { // set a secret for an account
+            json = r#"{"error":"TBI"}"#;
+        }
+        "deac" => { // delete an account
+            json = r#"{"error":"TBI"}"#;
+        }
+        "dens" => { // delete a namespace
+            json = r#"{"error":"TBI"}"#;
+        }
+        "mons" => { // modify a namespace name
+            json = r#"{"error":"TBI"}"#;
+        }
+        "moac" => { // modify an account name
+            json = r#"{"error":"TBI"}"#;
+        }
+        _ => { // op error
+            json = r#"{"error":"unknown op"}"#;
+        }
+    }
+    Response {
+        json:json,
+    }.show();
+    if update_db {
+        write_db(&home, &password, namespaces)?;
+    }
+    Ok(())
+}
+
+impl simweb::WebPage for Response<'_> { 
+    fn main_load(&self) -> Result<String, String> {
+        Ok(self.json.to_string ())
+    }
+    fn content_type(&self) -> &str {
+        "application/json"
     }
 }
+
+fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> HashMap<String, HashMap<String,String>> {
+    let mut res = HashMap::new();
+    match fs::read(&home) {
+        Ok(mut data) => {
+            eprintln!{"pass:{password}"}
+            let password = password.as_bytes();
+            for i in 0..data.len() {
+                data[i] ^= password[i % password.len()]
+            }
+            eprintln!("{}", String::from_utf8_lossy(&data));
+            let json_db = simjson::parse(&String::from_utf8_lossy(&data));
+            match json_db {
+                JsonData::Data(ns) => {
+                    for (key, value) in ns.iter() {
+                        match value {
+                            JsonData::Data(acn) => {
+                                let mut a_res = HashMap::new();
+                                for (a_key, a_value) in acn.iter() {
+                                    match a_value {
+                                         JsonData::Text(secret) => {
+                                             a_res.insert(a_key.to_string(), secret.to_string());
+                                         }
+                                         _ => ()
+                                    }
+                                }
+                                res.insert(key.to_string(), a_res);
+                            }
+                            _ => ()
+                        }
+                    }
+                }
+                 _ => ()
+            }
+        }
+         _ => ()
+    }
+    res
+}
+
+fn write_db(home: &PathBuf, password: &str, db: HashMap<String, HashMap<String,String>>) -> io::Result<()> {
+    let mut res = String::from("{");
+    //write!(res,"{{").unwrap();
+    for (key, value) in db.iter() {
+        write!(res,r#""{key}":{{"#).unwrap();
+        for (acn, secret) in value.iter() {
+             write!(res,r#""{acn}":"{secret}","#).unwrap();
+        }
+        // no json encodibg
+        write!(res,r#""":""}},"#).unwrap();
+    }
+    write!(res,r#""":{{}} }}"#).unwrap();
+    let password = password.as_bytes();
+    let mut byte_vec: Vec<u8> = res.into_bytes();
+    for i in 0..byte_vec.len() {
+        byte_vec[i] ^= password[i % password.len()]
+    } 
+    fs::write(&home,byte_vec)
+}
+
 /*
 Explanation
  * generate_totp function:
