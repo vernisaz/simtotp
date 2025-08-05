@@ -118,7 +118,7 @@ fn main() -> io::Result<()> {
             if args.len() > 4 {simweb::url_encode(&args[4])} else {"".to_string()}, if args.len() > 5 {args[5].clone()} else {"".to_string()});
         eprintln!("{query_str}");
         env::set_var("QUERY_STRING",query_str)
-    }// else {eprintln!("{:?}", env::var("QUERY_STRING"));}
+    } //else {eprintln!("{:?}", env::var("QUERY_STRING"));}
 
     let web = simweb::WebData::new();
     let mut password;
@@ -139,12 +139,14 @@ fn main() -> io::Result<()> {
     let code_str: String;
     match op.as_str() {
         "lsns" => { // list of namespaces
-            let mut res = String::from("[");
+            res.push('[');
             for (ns,_) in &namespaces {
                 // json encoding ?
                 write!(res,r#""{ns}","#).unwrap();
             }
             write!(res,r#"""]"#).unwrap();
+            eprintln!("return {res}");
+            json = &res
         }
         "lsac" => { // list of accounts in a namespace
             match web.param("name") {

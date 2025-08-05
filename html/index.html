@@ -15,20 +15,138 @@
       --bg-color: #1e1e1e;
       --text-color: #ccc;
     }
+    main {
+        display: grid;
+        grid-template-columns: 1fr;
+        row-gap: 1em;
+    }
+    section, header {
+        display: flex;
+        justify-content: center;
+    }
+    section {
+        gap: 1em;
+    }
+    label {
+      display: block;
+    }
+    div#code {
+        font-weight: bold;
+        font-size: x-large;
+    }
   </style>
+  <script>
+    function login() {
+          ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=lsns&`, success: function(json) {
+              if (!json.length) {
+                  const messageElement = document.querySelector('#message')
+                  messageElement.textContent = json.error
+                  return
+              }
+              const selectElement = document.querySelector('#namespaceName')
+              json.forEach(data => {
+                  if (data) {
+                    const newOption = new Option(data, data);
+                    selectElement.appendChild(newOption);
+                  }
+              })
+              document.querySelector('#namespace').addEventListener('input', (event) => {
+                    const selectedValue = event.target.value;
+                    ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=lsac&name=${encodeURIComponent(selectedValue)}`, success: function(json) {
+                        if (!json.length) {
+                              const messageElement = document.querySelector('#message')
+                              messageElement.textContent = json.error
+                              return
+                          }
+                          const selectElement = document.querySelector('#accountName')
+                          json.forEach(data => {
+                              if (data) {
+                                const newOption = new Option(data, data);
+                                selectElement.appendChild(newOption);
+                              }
+                          })
+                    }})
+                });
+          } })
+    }
+    function gen() {
+        ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=gen&name=${encodeURIComponent(document.querySelector('#namespace').value)}&account=${encodeURIComponent(document.querySelector('#account').value)}`, success: function(json) {
+              if (json.error) {
+                  const messageElement = document.querySelector('#message')
+                  messageElement.textContent = json.error
+                  return
+              }
+              const codeElement = document.querySelector('#code')
+              codeElement.textContent = json.code
+              
+        }})
+    }
+    function update() {
+        ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=adac&name=${encodeURIComponent(document.querySelector('#namespace').value)}&account=${encodeURIComponent(document.querySelector('#account').value)}&secret=${document.querySelector('#secret').value}`, success: function(json) {
+              if (json.error) {
+                  const messageElement = document.querySelector('#message')
+                  messageElement.textContent = json.error
+                  return
+              }
+              document.querySelector('#secret').value = ''
+        }})
+    }
+    function copyClbd() {
+        const codeDiv = document.querySelector('#code')
+        const textToCopy = codeDiv.innerText;
+        if (textToCopy) {
+              const messageElement = document.querySelector('#message')
+              const textarea = document.createElement('textarea')
+              textarea.id = 'temp_element'
+              textarea.style.height = 0
+              document.body.appendChild(textarea)
+              textarea.value = textToCopy
+              const selector = document.querySelector('#temp_element')
+              selector.select()
+              document.execCommand('copy')
+              document.body.removeChild(textarea)
+              messageElement.textContent = 'Text copied to clipboard successfully';
+        }
+    }
+  </script>
+  <script src="./common.js" language="Javascript"></script>
 </head>
+
 <body>
     <header><h1>Rust TOTP</h1></header>
     <main>
-        <div id="namespace">
-            <input type="text" name="product" list="namespaceName" />
-            <datalist id="namespaceName" size="3" required autofocus></datalist>
+        <section>
+        <div id="passwordSec">
+            <label for="password">Password</label>
+            <input type="password" name="password" required  autofocus/>
         </div>
-        <div id="account">
-            <select size="6" required></select>
+        <div id="namespaces">
+            <label for="namespace">Namespace</label>
+            <input type="text" id="namespace" list="namespaceName" />
+            <datalist id="namespaceName" size="3" required></datalist>
         </div>
-        <div id="secret"></div>
+        <div id="accounts">
+            <label for="account">Account</label>
+            <input type="text" id="account" list="accountName" />
+            <datalist id="accountName" size="6" required></datalist>
+        </div>
+        <div id="secret">
+            <label for="secret">Secret</label>
+            <input type="password" name="secret" />
+        </div>
+        </section>
+        <section>
+            <button type="button" onclick="login()">Login</button>
+            <button type="button" onclick="gen()">Generate</button>
+            <button type="button" onclick="update()">Update</button>
+        </section>
+        <section>
+            <div id="code"></div><button type="button" onclick="copyClbd()">📋</button>
+        </section>
+        <section>
+            <div id="message"></div>
+        </section>
     </main>
-    <footer>&copy; D Rogatkin</footer>
+    <footer>&copy; <script>document.write(new Date().getFullYear())</script> D Rogatkin</footer>
 </body>
 </html>
