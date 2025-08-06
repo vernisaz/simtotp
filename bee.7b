@@ -23,6 +23,14 @@ if {
 	}
 }
 
+mode=mode:prop
+if {
+	eq(mode,release) then {
+		array(-C,opt-level=3)
+		assign(comp opts,~~)
+	}
+}
+
 #
 target package {
 	dependency {

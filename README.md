@@ -36,7 +36,7 @@ The file has to be in the same directory as *simtotp* executable;
 
 ## packaging
 There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit _env.conf_
-after unzipping the package to avoid port conflict.
+after unzipping the package to avoid a port conflict.
 
 ## References
 1. [hmac description](https://en.wikipedia.org/wiki/HMAC)

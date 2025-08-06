@@ -131,7 +131,7 @@
                           messageElement.textContent = json.error
                           return
                     }
-                    messageElement.textContent = ''
+                    document.querySelector('#account').value = ''
                 }})
             } else {
                 ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=dens&name=${encodeURIComponent(namespaceName)}`, success: function(json) {
@@ -140,9 +140,10 @@
                           messageElement.textContent = json.error
                           return
                     }
-                    messageElement.textContent = ''
                 }})
             }
+            document.querySelector('#namespace').value = ''
+            messageElement.textContent = ''
         }
         loadNamespaces()
     }
@@ -211,6 +212,13 @@
               messageElement.textContent = 'Text copied to clipboard successfully';
         }
     }
+    function version(footer) {
+        ajax.get({url:`./bin/simtotp?pass=&op=vers`, success: function(json) {
+            if (json.ok) {
+                  footer.textContent = `${json.version} © ${new Date().getFullYear()} D Rogatkin`
+            }
+        }})
+    }
   </script>
   <script src="./common.js" language="Javascript"></script>
 </head>
@@ -253,6 +261,6 @@
             <div id="message"></div>
         </section>
     </main>
-    <footer>&copy; <script>document.write(new Date().getFullYear())</script> D Rogatkin</footer>
+    <footer onclick="version(this)">&copy; <script>document.write(new Date().getFullYear())</script> D Rogatkin</footer>
 </body>
 </html>
