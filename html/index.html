@@ -70,14 +70,28 @@
           } })
     }
     function gen() {
+        if (!document.querySelector('#namespace').value || !document.querySelector('#account').value) {
+            const messageElement = document.querySelector('#message')
+            messageElement.textContent = 'a name space and an account are required to get a code'
+            return
+        }
         ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=gen&name=${encodeURIComponent(document.querySelector('#namespace').value)}&account=${encodeURIComponent(document.querySelector('#account').value)}`, success: function(json) {
+              const messageElement = document.querySelector('#message')
               if (json.error) {
-                  const messageElement = document.querySelector('#message')
                   messageElement.textContent = json.error
                   return
+              } else {
+                  messageElement.textContent = ''
               }
               const codeElement = document.querySelector('#code')
               codeElement.textContent = json.code
+              const cbdBtn = document.querySelector('#cbd')
+              cbdBtn.removeAttribute("hidden")
+              setTimeout(() => {
+                  cbdBtn.setAttribute("hidden",'');
+                  codeElement.textContent = ''
+                  messageElement.textContent = 'the code was expired'
+                }, 30000)
               
         }})
     }
@@ -157,7 +171,7 @@
             <button type="button" title="upload datasheet with secret keys" onclick="upload()">📤</button>
         </section>
         <section>
-            <div id="code"></div><button type="button" onclick="copyClbd()">📋</button>
+            <div id="code"></div><button type="button" id="cbd" onclick="copyClbd()" hidden>📋</button>
         </section>
         <section>
             <div id="message"></div>
