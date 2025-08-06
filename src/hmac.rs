@@ -47,13 +47,13 @@ pub fn hmac(key:&[u8], message: &[u8], block_size: usize) -> [u8;20]{
 
 	// Append the inner_key
 	let mut msg = vec![0u8; message.len() + block_size];
-	msg[0..inner_key.len()].copy_from_slice(&inner_key[..]); //msg.set(inner_key, 0);
-	msg[inner_key.len()..].copy_from_slice(&message[..]); //msg.set(data, 64);
+	msg[0..inner_key.len()].copy_from_slice(&inner_key[..]);
+	msg[inner_key.len()..].copy_from_slice(&message[..]);
 
 	// Has the previous message and append the outer_key
 	let mut result = vec![0u8; block_size + 20];
-	result[0..outer_key.len()].copy_from_slice(&outer_key[..]); //result.set(outer_key, 0);
-	result[outer_key.len()..outer_key.len()+20].copy_from_slice(&Sha1::new().hash(&msg)[..20]); //result.set(sha256(msg), 64);
+	result[0..outer_key.len()].copy_from_slice(&outer_key[..]);
+	result[outer_key.len()..outer_key.len()+20].copy_from_slice(&Sha1::new().hash(&msg)[..20]);
 
 	// Hash the previous message
 	sha1.hash(&result)
