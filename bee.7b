@@ -3,6 +3,43 @@ main=src${~/~}main
 common =..${~/~}simscript${~/~}comm-build.7b:file
 crate_dir=..${~/~}crates
 comp opts=[--extern, simweb]
-display(de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9)
+version=1.01-dev
+
+set_env(VERSION,version)
 #
+target package {
+	dependency {
+        target(build)
+    }
+	dependency{true}
+	http conf="{
+   \"bind\" : \"0.0.0.0\",
+   \"port\" : 3000,
+   \"threads\" : 20,
+   \"no terminal\": true,
+   \"mapping\" : [
+       {\"path\":\"/totp/bin\", \"_comment_\": \"Simple TOTP using Rust\",
+	   \"CGI\": true,
+	   \"translated\": \".${~/~}\"},
+	   {\"path\":\"/totp\",
+	   \"translated\": \".${~/~}\"}
+   ],
+    \"log\" : {
+          \"out\": {
+                  \"out _comment_\": \"file\",
+                  \"name\": \"simtotp-${0}\",
+                  \"path\":\".${~/~}\",
+                  \"max lines\": 1200,
+                  \"max files\": 20
+          },
+          \"level\":2
+    },
+    \"mime\":
+        [
+        {\"ext\":\"html\", \"type\":\"text/html\"},
+        {\"ext\":\"htm\", \"type\":\"text/html\"},
+        {\"ext\":\"txt\",\"type\":\"text/plain\"}
+    ]}"
+}
+
 include(common);

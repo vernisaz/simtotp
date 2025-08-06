@@ -13,6 +13,8 @@ use hmac::hmac;
 use simweb::WebPage;
 use simjson::{JsonData::{self}};
 
+const VERSION: &str = env!("VERSION");
+
 /// Generates a TOTP code.
 ///
 /// # Arguments
@@ -57,17 +59,19 @@ fn hotp_from_hmac(hmac_result: &[u8], digits: u32) -> u32 {
 }
 
 use base32::Alphabet;
-use std::{env, fs::{self, read_to_string}, path::{PathBuf}, io, collections::HashMap,
-    fmt::Write,
+use std::{env, fs::{self, read_to_string}, path::{PathBuf}, io::{self,Write}, collections::HashMap,
+    fmt::Write as fmtWrite,
 };
+
 struct Response<'a> {
     json: &'a str,
 }
+
 fn main() -> io::Result<()> {
    #[cfg(test)]
     {
     let test = hmac(b"key", b"The quick brown fox jumps over the lazy dog", 64);
-    eprintln!("code 0x{}", simweb::to_hex(&test));
+    assert_eq!(simweb::to_hex(&test), "de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9")
     }
     let totp = std::env::current_exe();
     
@@ -110,6 +114,7 @@ fn main() -> io::Result<()> {
         // CLI mode
         let args: Vec<String> = env::args().collect();
         if args.len() <= 3  {
+            eprintln!("Simple TOTP v-{VERSION}");
             eprintln!("No program arguments from web or CLI");
             std::process::exit(1)
         }
@@ -145,7 +150,6 @@ fn main() -> io::Result<()> {
                 write!(res,r#""{ns}","#).unwrap();
             }
             write!(res,r#"""]"#).unwrap();
-            eprintln!("return {res}");
             json = &res
         }
         "lsac" => { // list of accounts in a namespace
@@ -327,6 +331,26 @@ fn main() -> io::Result<()> {
                 }
             }
         }
+        "dndb" => { // download db
+            if let Some(dn_password) = web.param("dnpassword") {
+                let db = write_db(&dn_password, namespaces);
+                // Content-Lengt will be recalculated by CGI provider anyway
+                print!("Content-Length: {}\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename=\"totp.db\"\r\n\r\n", db.len());
+                return io::stdout().write_all(&db[..])
+            }
+            json = r#"{"error":"no no db password"}"#;
+        }
+         "updb" => { // upload db
+            match web.param("upFile") {
+                None => json = r#"{"error":"nothing was uploaded"}"#,
+                Some(file) => {
+                    let up_password = web.param("uppassword") .unwrap_or(String::new());
+                    namespaces = read_db(&PathBuf::from(&file), &up_password);
+                    update_db = true;
+                    json = r#"{"ok":true}"#;
+                }
+            }
+        }
         _ => { // op error
             json = r#"{"error":"unknown op"}"#;
         }
@@ -335,9 +359,10 @@ fn main() -> io::Result<()> {
         json:json,
     }.show();
     if update_db {
-        write_db(&home, &password, namespaces)?;
+        fs::write(&home,write_db(&password, namespaces))
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
 impl simweb::WebPage for Response<'_> { 
@@ -353,12 +378,14 @@ fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> HashMap<String, HashMap<
     let mut res = HashMap::new();
     match fs::read(&home) {
         Ok(mut data) => {
-            eprintln!{"pass:{password}"}
+            //eprintln!{"pass:{password}"}
             let password = password.as_bytes();
-            for i in 0..data.len() {
-                data[i] ^= password[i % password.len()]
+            if password.len() > 0 {
+                for i in 0..data.len() {
+                    data[i] ^= password[i % password.len()]
+                }
             }
-            eprintln!("{}", String::from_utf8_lossy(&data));
+            //eprintln!("{}", String::from_utf8_lossy(&data));
             let json_db = simjson::parse(&String::from_utf8_lossy(&data));
             match json_db {
                 JsonData::Data(ns) => {
@@ -388,9 +415,8 @@ fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> HashMap<String, HashMap<
     res
 }
 
-fn write_db(home: &PathBuf, password: &str, db: HashMap<String, HashMap<String,String>>) -> io::Result<()> {
+fn write_db(password: &str, db: HashMap<String, HashMap<String,String>>) -> Vec<u8> {
     let mut res = String::from("{");
-    //write!(res,"{{").unwrap();
     for (key, value) in db.iter() {
         if key.is_empty() { continue }
         write!(res,r#""{key}":{{"#).unwrap();
@@ -405,10 +431,12 @@ fn write_db(home: &PathBuf, password: &str, db: HashMap<String, HashMap<String,S
     write!(res,r#""":{{}} }}"#).unwrap();
     let password = password.as_bytes();
     let mut byte_vec: Vec<u8> = res.into_bytes();
-    for i in 0..byte_vec.len() {
-        byte_vec[i] ^= password[i % password.len()]
-    } 
-    fs::write(&home,byte_vec)
+    if password.len() > 0 {
+        for i in 0..byte_vec.len() {
+            byte_vec[i] ^= password[i % password.len()]
+        } 
+    }
+    byte_vec
 }
 
 /*

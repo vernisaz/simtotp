@@ -91,6 +91,19 @@
               document.querySelector('#secret').value = ''
         }})
     }
+    function del() {
+        
+    }
+    function download() {
+        const password = prompt("Provide password for data (optional)?")
+        const link = document.createElement("a");
+        link.href = `./bin/simtotp?op=dndb&pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&dnpassword=${encodeURIComponent(password)}`;
+        link.download = 'totp.db';
+        link.click();
+    }
+    function upload() {
+        
+    }
     function copyClbd() {
         const codeDiv = document.querySelector('#code')
         const textToCopy = codeDiv.innerText;
@@ -136,9 +149,12 @@
         </div>
         </section>
         <section>
-            <button type="button" onclick="login()">Login</button>
+            <button type="button" onclick="login()">Login/update</button>
             <button type="button" onclick="gen()">Generate</button>
-            <button type="button" onclick="update()">Update</button>
+            <button type="button" onclick="update()">Apply</button>
+            <button type="button" onclick="del()">Delete</button>
+            <button type="button" title="download datasheet with secret keys" onclick="download()">📥</button>
+            <button type="button" title="upload datasheet with secret keys" onclick="upload()">📤</button>
         </section>
         <section>
             <div id="code"></div><button type="button" onclick="copyClbd()">📋</button>
