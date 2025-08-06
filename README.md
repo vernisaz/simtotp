@@ -2,7 +2,7 @@
 
 ## why
 
-Many services started requiring 2FA recent time. Marketing imediately responded to the demand
+Many services started requiring 2FA recent time. Marketing immediately responded to the demand
 offering nice and powerful solutions. But usual thing is the solutions are too complex.
 
 If you ask AI to implement TOTP then it will offer 100 line code for that. Obviously,
@@ -25,14 +25,18 @@ The following fragment has to be added in the mapping section of the server:
    {"path":"/totp",
    "translated": "./../simtotp/html"}
 ```
-Obviously that CGI Rust app can be in the same directory, where the rest of web resouces. It should be
+Obviously that CGI Rust app can be in the same directory, where the rest of web resources. It should be
 reflecting in *mapping* though.
 
 The program needs to know *HOME* directory to successfully function. It gets obtained automatically at
 the first run when the program invoked from a terminal. It doesn't matter how the program executed in the case.
 
 If _.home_ file wasn't created for some reason. You can create it manually with a string with full HOME directory path.
-The file has to be in the same directory as *simtotp* executabe;
+The file has to be in the same directory as *simtotp* executable;
+
+## packaging
+There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit _env.conf_
+after unzipping the package to avoid port conflict.
 
 ## References
 1. [hmac description](https://en.wikipedia.org/wiki/HMAC)

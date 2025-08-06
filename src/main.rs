@@ -179,21 +179,22 @@ fn main() -> io::Result<()> {
                         if let Some(web_secret) = ns.get(&acn) {
                             let digits = 6;
                             let step = 30;
-                            let secret;
-                            secret = base32::decode(Alphabet::Rfc4648 { padding: false }, &web_secret).unwrap();
-
-                            done = true;
-                            match generate_totp(&secret, digits, step) {
-                                Some(code) => {
-                                    code_str = format!(r#"{{"code":"{:0>width$}"}}"#, code, width = digits as usize);
-                                    json = &code_str;
-                                    eprintln!("Current TOTP code: {:0>width$}", code, width = digits as usize);
+                            if let Some(secret) = base32::decode(Alphabet::Rfc4648 { padding: false }, &web_secret) {
+                                match generate_totp(&secret, digits, step) {
+                                    Some(code) => {
+                                        code_str = format!(r#"{{"code":"{:0>width$}"}}"#, code, width = digits as usize);
+                                        json = &code_str;
+                                        eprintln!("Current TOTP code: {:0>width$}", code, width = digits as usize);
+                                    }
+                                    None => {
+                                        json = r#"{"error":"Failed to generate TOTP code."}"#;
+                                        eprintln!("Failed to generate TOTP code.");
+                                    }
                                 }
-                                None => {
-                                    json = r#"{"error":"Failed to generate TOTP code."}"#;
-                                    eprintln!("Failed to generate TOTP code.");
-                                }
+                            } else {
+                                json = r#"{"error":"The secret isn't valid base32 value."}"#;
                             }
+                            done = true;
                         }
                     } else {
                         eprintln!("no namespace {name} in {namespaces:?}")
@@ -345,12 +346,16 @@ fn main() -> io::Result<()> {
                 None => json = r#"{"error":"nothing was uploaded"}"#,
                 Some(file) => {
                     let up_password = web.param("uppassword") .unwrap_or(String::new());
-                    namespaces = read_db(&PathBuf::from(&file), &up_password);
+                    let up_file = PathBuf::from(&file);
+                    namespaces = read_db(&up_file, &up_password);
+                    let _ = fs::remove_file(up_file);
                     update_db = true;
                     json = r#"{"ok":true}"#;
                 }
             }
         }
+        "vers" => {code_str = format!(r#"{{"version":"v{VERSION}","ok":true}}"#);
+            json = &code_str;},
         _ => { // op error
             json = r#"{"error":"unknown op"}"#;
         }
@@ -390,10 +395,12 @@ fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> HashMap<String, HashMap<
             match json_db {
                 JsonData::Data(ns) => {
                     for (key, value) in ns.iter() {
+                        if key.is_empty() { continue}
                         match value {
                             JsonData::Data(acn) => {
                                 let mut a_res = HashMap::new();
                                 for (a_key, a_value) in acn.iter() {
+                                    if a_key.is_empty() { continue }
                                     match a_value {
                                          JsonData::Text(secret) => {
                                              a_res.insert(a_key.to_string(), secret.to_string());

@@ -4,8 +4,25 @@ common =..${~/~}simscript${~/~}comm-build.7b:file
 crate_dir=..${~/~}crates
 comp opts=[--extern, simweb]
 version=1.01-dev
+simhttp proj=..${~/~}simhttp
 
 set_env(VERSION,version)
+
+if {
+	eq(${~os~},windows)
+	then {
+		assign(ext,.exe)
+		assign(scr_ext,.bat)
+		assign(script,START /B .\bin\simhttp.exe %1)
+	}
+	else {
+		assign(ext,)
+		assign(scr_ext,.sh)
+		assign(script,"#!/bin/sh
+./bin/simhttp $1&")
+	}
+}
+
 #
 target package {
 	dependency {
@@ -40,6 +57,24 @@ target package {
         {\"ext\":\"htm\", \"type\":\"text/html\"},
         {\"ext\":\"txt\",\"type\":\"text/plain\"}
     ]}"
+    zip(.${~/~}simtotp-${version}.zip,
+    -A ${project}/env.conf,
+	${http conf},
+	-B ${project}/bin,
+	${simhttp proj}${~/~}simhttp${ext},
+	-B ${project},
+	.${~/~}html${~/~}index.html,
+	-B ${project},
+	.${~/~}html${~/~}favicon.ico,
+	-B ${project},
+	.${~/~}html${~/~}common.js,
+	-B ${project},
+	.${~/~}simtotp${ext},
+	-B ${project},
+	.${~/~}README.md,
+	-E ${project}/httptotp${scr_ext},
+	"${script}")
+	display(done ${~~})
 }
 
 include(common);

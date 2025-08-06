@@ -38,9 +38,11 @@
   <script>
 
     function loadNamespaces() {
-          ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=lsns&`, success: function(json) {
+        if (!checkPassword())
+            return
+        ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=lsns&`, success: function(json) {
+              const messageElement = document.querySelector('#message')
               if (!json.length) {
-                  const messageElement = document.querySelector('#message')
                   messageElement.textContent = json.error
                   return
               }
@@ -52,28 +54,32 @@
                     selectElement.appendChild(newOption);
                   }
               })
+              messageElement.textContent = ''
               document.querySelector('#namespace').addEventListener('input', (event) => {
                     const selectedValue = event.target.value;
                     ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=lsac&name=${encodeURIComponent(selectedValue)}`, success: function(json) {
+                         const messageElement = document.querySelector('#message')
                         if (!json.length) {
-                              const messageElement = document.querySelector('#message')
                               messageElement.textContent = json.error
                               return
                           }
                           const selectElement = document.querySelector('#accountName')
                           selectElement.innerHTML = ''
-                          document.querySelector('#accoun').value = ''
+                          document.querySelector('#account').value = ''
                           json.forEach(data => {
                               if (data) {
                                 const newOption = new Option(data, data);
                                 selectElement.appendChild(newOption);
                               }
                           })
+                          messageElement.textContent = ''
                     }})
                 });
           } })
     }
     function gen() {
+        if (!checkPassword())
+            return
         if (!document.querySelector('#namespace').value || !document.querySelector('#account').value) {
             const messageElement = document.querySelector('#message')
             messageElement.textContent = 'a name space and an account are required to get a code'
@@ -100,6 +106,8 @@
         }})
     }
     function update() {
+        if (!checkPassword())
+            return
         ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=adac&name=${encodeURIComponent(document.querySelector('#namespace').value)}&account=${encodeURIComponent(document.querySelector('#account').value)}&secret=${document.querySelector('#secret').value}`, success: function(json) {
               if (json.error) {
                   const messageElement = document.querySelector('#message')
@@ -111,9 +119,36 @@
         }})
     }
     function del() {
-        
+        if (!checkPassword())
+            return
+        const namespaceName = document.querySelector('#namespace').value
+        if (namespaceName) {
+            const accountName = document.querySelector('#account').value
+            if (accountName) {
+                ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=deac&name=${encodeURIComponent(namespaceName)}&account=${encodeURIComponent(accountName)}`, success: function(json) {
+                    const messageElement = document.querySelector('#message')
+                    if (json.error) {
+                          messageElement.textContent = json.error
+                          return
+                    }
+                    messageElement.textContent = ''
+                }})
+            } else {
+                ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=dens&name=${encodeURIComponent(namespaceName)}`, success: function(json) {
+                    const messageElement = document.querySelector('#message')
+                    if (json.error) {
+                          messageElement.textContent = json.error
+                          return
+                    }
+                    messageElement.textContent = ''
+                }})
+            }
+        }
+        loadNamespaces()
     }
     function download() {
+        if (!checkPassword())
+            return
         const password = prompt("Provide password for data (optional)?")
         const link = document.createElement("a");
         link.href = `./bin/simtotp?op=dndb&pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&dnpassword=${encodeURIComponent(password)}`;
@@ -121,6 +156,8 @@
         link.click();
     }
     function upload() {
+        if (!checkPassword())
+            return
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.multiple = false; 
@@ -148,6 +185,14 @@
             xhr.send(fd);
         });
         fileInput.click()
+    }
+    function checkPassword() {
+        if (!document.querySelector('input[name="password"]').value) {
+            const messageElement = document.querySelector('#message')
+            messageElement.textContent = 'enter a password first'
+            return false
+        }
+        return true
     }
     function copyClbd() {
         const codeDiv = document.querySelector('#code')
@@ -188,14 +233,14 @@
             <input type="text" id="account" list="accountName" />
             <datalist id="accountName" size="6" required></datalist>
         </div>
-        <div id="secret">
+        <div id="secretsecret">
             <label for="secret">Secret</label>
             <input type="password" id="secret" />
         </div>
         </section>
         <section>
             <button type="button" onclick="loadNamespaces()">Update</button>
-            <button type="button" onclick="gen()">Generate</button>
+            <button type="button" onclick="gen()" style="font-weight: bold;padding:6px;">Generate</button>
             <button type="button" onclick="update()">Apply</button>
             <button type="button" onclick="del()">Delete</button>
             <button type="button" title="download datasheet with secret keys" onclick="download()">📥</button>
