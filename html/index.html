@@ -36,7 +36,8 @@
     }
   </style>
   <script>
-    function login() {
+
+    function loadNamespaces() {
           ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=lsns&`, success: function(json) {
               if (!json.length) {
                   const messageElement = document.querySelector('#message')
@@ -44,6 +45,7 @@
                   return
               }
               const selectElement = document.querySelector('#namespaceName')
+              selectElement.innerHTML = ''
               json.forEach(data => {
                   if (data) {
                     const newOption = new Option(data, data);
@@ -59,6 +61,8 @@
                               return
                           }
                           const selectElement = document.querySelector('#accountName')
+                          selectElement.innerHTML = ''
+                          document.querySelector('#accoun').value = ''
                           json.forEach(data => {
                               if (data) {
                                 const newOption = new Option(data, data);
@@ -103,6 +107,7 @@
                   return
               }
               document.querySelector('#secret').value = ''
+              loadNamespaces()
         }})
     }
     function del() {
@@ -116,7 +121,33 @@
         link.click();
     }
     function upload() {
-        
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.multiple = false; 
+        fileInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            const password = prompt("Provide password for data (optional)?")
+            const uri = `./bin/simtotp?op=updb&pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&dnpassword=${encodeURIComponent(password)}`;
+            const xhr = new XMLHttpRequest();
+            const fd = new FormData();
+    
+            xhr.open("POST", uri, true);
+            xhr.onreadystatechange = () => {
+              if (xhr.readyState === 4 && xhr.status === 200) {
+                  
+                  const resp = JSON.parse(xhr.responseText)
+                  if (resp.error) {
+                      const messageElement = document.querySelector('#message')
+                      messageElement.textContent = resp.error
+                  } else {
+                      loadNamespaces()
+                  }
+              }
+            };
+            fd.append("upFile", files[0]);
+            xhr.send(fd);
+        });
+        fileInput.click()
     }
     function copyClbd() {
         const codeDiv = document.querySelector('#code')
@@ -159,11 +190,11 @@
         </div>
         <div id="secret">
             <label for="secret">Secret</label>
-            <input type="password" name="secret" />
+            <input type="password" id="secret" />
         </div>
         </section>
         <section>
-            <button type="button" onclick="login()">Login/update</button>
+            <button type="button" onclick="loadNamespaces()">Update</button>
             <button type="button" onclick="gen()">Generate</button>
             <button type="button" onclick="update()">Apply</button>
             <button type="button" onclick="del()">Delete</button>
