@@ -10,9 +10,10 @@ mod hmac;
 use sha1::Sha1;
 use std::time::{SystemTime, UNIX_EPOCH};
 use hmac::hmac;
-use simweb::WebPage;
+use simweb::{WebPage,json_encode};
 use simjson::{JsonData::{self}};
-
+use std::convert::TryInto;
+   
 const VERSION: &str = env!("VERSION");
 
 /// Generates a TOTP code.
@@ -47,12 +48,8 @@ pub fn generate_totp(secret: &[u8], digits: u32, step_seconds: u64) -> Option<u3
 /// Extracts an HOTP code from an HMAC result.
 fn hotp_from_hmac(hmac_result: &[u8], digits: u32) -> u32 {
     let offset = (hmac_result[19] & 0xf) as usize;
-    let otp = 
-        ((hmac_result[offset] as u32) & 0x7f) << 24 |
-        ((hmac_result[offset + 1] as u32) & 0xff) << 16 |
-        ((hmac_result[offset + 2] as u32) & 0xff) << 8 |
-        ((hmac_result[offset + 3] as u32) & 0xff)
-    ;
+    let hmac_truncated: Vec<u8> = hmac_result[offset..offset + 4].to_vec();
+    let otp = u32::from_be_bytes(hmac_truncated.try_into().unwrap()) & 0x7fffffff;
 
     let power_of_10 = 10u32.pow(digits);
     otp % power_of_10
@@ -146,8 +143,7 @@ fn main() -> io::Result<()> {
         "lsns" => { // list of namespaces
             res.push('[');
             for (ns,_) in &namespaces {
-                // json encoding ?
-                write!(res,r#""{ns}","#).unwrap();
+                write!(res,r#""{}","#,json_encode(&ns)).unwrap();
             }
             write!(res,r#"""]"#).unwrap();
             json = &res
@@ -157,11 +153,9 @@ fn main() -> io::Result<()> {
                 Some(ns) => {
                     let acns = namespaces.get(&ns);
                         if let Some(acns) = acns {
-                        //let mut res = String::from("[");
                         res.push('[');
                         for (acn,_) in acns {
-                            // json encoding ?
-                            write!(res,r#""{acn}","#).unwrap();
+                            write!(res,r#""{}","#,json_encode(&acn)).unwrap();
                         }
                         write!(res,r#"""]"#).unwrap();
                         json = &res
@@ -383,7 +377,6 @@ fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> HashMap<String, HashMap<
     let mut res = HashMap::new();
     match fs::read(&home) {
         Ok(mut data) => {
-            //eprintln!{"pass:{password}"}
             let password = password.as_bytes();
             if password.len() > 0 {
                 for i in 0..data.len() {
