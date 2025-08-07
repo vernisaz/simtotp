@@ -14,12 +14,14 @@ if {
 		assign(ext,.exe)
 		assign(scr_ext,.bat)
 		assign(script,START /B .\bin\simhttp.exe %1)
+		assign(slash,\\\\)
 	}
 	else {
 		assign(ext,)
 		assign(scr_ext,.sh)
 		assign(script,"#!/bin/sh
 ./bin/simhttp $1&")
+        assign(slash,/)
 	}
 }
 
@@ -45,15 +47,15 @@ target package {
    \"mapping\" : [
        {\"path\":\"/totp/bin\", \"_comment_\": \"Simple TOTP using Rust\",
 	   \"CGI\": true,
-	   \"translated\": \".${~/~}\"},
+	   \"translated\": \".${slash}\"},
 	   {\"path\":\"/totp\",
-	   \"translated\": \".${~/~}\"}
+	   \"translated\": \".${slash}\"}
    ],
     \"log\" : {
           \"out\": {
                   \"out _comment_\": \"file\",
                   \"name\": \"simtotp-${0}\",
-                  \"path\":\".${~/~}\",
+                  \"path\":\".${slash}\",
                   \"max lines\": 1200,
                   \"max files\": 20
           },

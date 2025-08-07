@@ -29,7 +29,7 @@ Obviously that CGI Rust app can be in the same directory, where the rest of web 
 reflecting in *mapping* though.
 
 The program needs to know *HOME* directory to successfully function. It gets obtained automatically at
-the first run when the program invoked from a terminal. It doesn't matter how the program executed in the case.
+the first run when the program invoked from a **terminal**. It doesn't matter how the program executed in the case.
 
 If _.home_ file wasn't created for some reason. You can create it manually with a string with full HOME directory path.
 The file has to be in the same directory as *simtotp* executable;
@@ -38,7 +38,10 @@ The file has to be in the same directory as *simtotp* executable;
 There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit _env.conf_
 after unzipping the package to avoid a port conflict.
 
-## References
+## accessing
+An access URL looks like: `http://localhost:3000/totp/`, the ending slash is essential.
+
+## references
 1. [hmac description](https://en.wikipedia.org/wiki/HMAC)
 2. [hmac algorithm in JS](https://gist.github.com/stevendesu/2d52f7b5e1f1184af3b667c0b5e054b8)
 3. [RFC 6238](https://datatracker.ietf.org/doc/html/rfc6238)
