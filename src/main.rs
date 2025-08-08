@@ -1,4 +1,4 @@
-/*Generating TOTP in Rust involves implementing the algorithm described in RFC 6238. This typically uses the HMAC-SHA1 cryptographic function along with a time component.
+/* Generating TOTP in Rust involves implementing the algorithm described in RFC 6238. This typically uses the HMAC-SHA1 cryptographic function along with a time component.
 Below is an example of Rust code for generating a TOTP.
 */
 // src/main.rs
@@ -456,5 +456,7 @@ Explanation
    * The most significant bit of the first byte is masked off to ensure the result is a positive integer.
    * These 4 bytes are combined into a single u32 value.
    * Finally, a modulo operation is performed with a power of 10 to get the desired number of digits.
-This example provides a clear, self-contained implementation of the TOTP algorithm in Rust. For a more robust solution in a real-world application, you might consider using a dedicated library like otp-rs which handles more details, such as base32 secret key decoding and error handling.
+This example provides a clear, self-contained implementation of the TOTP algorithm in Rust. 
+For a more robust solution in a real-world application, you might consider using a dedicated library like otp-rs which handles more details,
+such as base32 secret key decoding and error handling.
 */

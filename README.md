@@ -34,6 +34,16 @@ the first run when the program invoked from a **terminal**. It doesn't matter if
 If _.home_ file wasn't created for some reason. You can create it manually with a string with full HOME directory path.
 The file has to be in the same directory as *simtotp* executable;
 
+## building
+In case if no Rust executable for your platform or you like to build everything by yourself, you will need to:
+
+1. obtain [rb](https://sourceforge.net/projects/seven-bee/files/Release%201.3.1/) or build from [source](https://gitlab.com/tools6772135/rusthub/-/tree/master/src/rust/rustbee)
+2. clone [base32](https://github.com/andreasots/base32/tree/master), [simweb](https://github.com/vernisaz/simweb),
+[simjson](https://github.com/vernisaz/simjson), and [simscript](https://github.com/vernisaz/simscript)
+
+First, build all dependencies by executing _rb_ in their repositories. _simscript_ doesn't need to be built. [bee.7b](https://github.com/vernisaz/simtotp/blob/master/dep%20crates/README.md)
+is provided for _base32_. And then execute _rb_ here.
+
 ## packaging
 There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit _env.conf_
 after unzipping the package to avoid a port conflict.

@@ -17,6 +17,20 @@ crate_dir=..${~/~}..${~/~}crates
 
 include(common);
 
-# include(common_test)
 ```
 
+The script assumes the following directories structure:
+
+```
+projects
+   ....
+   ├─simscript
+   ├─crates
+   ├─simtotp
+   ├─side
+      ├─base32
+      ....
+   .....
+```
+
+Paths in the script may need to be corrected in a case of a different structure.  
