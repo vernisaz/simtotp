@@ -7,7 +7,7 @@ Use the script to build it:
 ```
 # from https://github.com/andreasots/base32/tree/master
 crate  =base32
-main=src/lib
+main=src${~/~}lib
 dep_crates=[]
 comp opts=[]
 test file=test
@@ -22,7 +22,7 @@ include(common);
 The script assumes the following directories structure:
 
 ```
-projects
+├─projects
    ....
    ├─simscript
    ├─crates
@@ -31,6 +31,7 @@ projects
       ├─base32
       ....
    .....
+....
 ```
 
-Paths in the script may need to be corrected in a case of a different structure.  
+Paths may need to be corrected in the script in a case of a different directories structure.  
