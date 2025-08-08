@@ -34,6 +34,16 @@
         font-weight: bold;
         font-size: x-large;
     }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #ccc;
+            color-scheme: dark;
+        }
+        .selected-panel {
+            background-color: #706706;
+        }
+    }
   </style>
   <script>
 
