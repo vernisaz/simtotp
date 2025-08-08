@@ -48,8 +48,8 @@ pub fn generate_totp(secret: &[u8], digits: u32, step_seconds: u64) -> Option<u3
 /// Extracts an HOTP code from an HMAC result.
 fn hotp_from_hmac(hmac_result: &[u8], digits: u32) -> u32 {
     let offset = (hmac_result[19] & 0xf) as usize;
-    let hmac_truncated: Vec<u8> = hmac_result[offset..offset + 4].to_vec();
-    let otp = u32::from_be_bytes(hmac_truncated.try_into().unwrap()) & 0x7fffffff;
+    let hmac_truncated = hmac_result[offset..offset + 4].to_vec();
+    let otp = u32::from_be_bytes(hmac_truncated.try_into().unwrap()) & 0x7fff_ffff;
 
     let power_of_10 = 10u32.pow(digits);
     otp % power_of_10

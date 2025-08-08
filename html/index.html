@@ -100,7 +100,7 @@
               setTimeout(() => {
                   cbdBtn.setAttribute("hidden",'');
                   codeElement.textContent = ''
-                  messageElement.textContent = 'the code was expired'
+                  messageElement.textContent = 'the code has expired'
                 }, 30000)
               
         }})
@@ -219,6 +219,21 @@
             }
         }})
     }
+    function changePassword() {
+        if (!checkPassword())
+            return
+        const newPassword = prompt('Provide new pasword?') // TODO chnage to modal dialog with scrambled password field
+        const messageElement = document.querySelector('#message')
+        if (!newPassword) {
+            messageElement.textContent = 'New password shoud be non empty'
+        }
+        ajax.get({url:`./bin/simtotp?pass=${encodeURIComponent(document.querySelector('input[name="password"]').value)}&op=uppa&newpassword=${encodeURIComponent(newPassword)}`, success: (json) => {
+            if (json.ok) {
+                document.querySelector('input[name="password"]').value = newPassword
+                messageElement.textContent = 'The password's changed'
+            }
+        }})
+    }
   </script>
   <script src="./common.js" language="Javascript"></script>
 </head>
@@ -229,6 +244,7 @@
         <section>
         <div id="passwordSec">
             <label for="password">Password</label>
+           <button type="button" onclick="changePassword()">⚡</button>
             <input type="password" name="password" required  autofocus/>
         </div>
         <div id="namespaces">
