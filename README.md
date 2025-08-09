@@ -25,11 +25,11 @@ The following fragment has to be added in the mapping section of the server:
    {"path":"/totp",
    "translated": "./../simtotp/html"}
 ```
-Obviously that CGI Rust app can be in the same directory, where the rest of web resources. It should be
+Obviously that CGI Rust app can be in the same directory, where the rest of web resources reside. It should be
 reflecting in *mapping* though.
 
 The program needs to know *HOME* directory to successfully function. It gets obtained automatically at
-the first run when the program invoked from a **terminal**. It doesn't matter if the program executed with a error code.
+the first run when the program invoked from a **terminal**. It doesn't matter if the program reported some errors.
 
 If _.home_ file wasn't created for some reason. You can create it manually with a string with full HOME directory path.
 The file has to be in the same directory as *simtotp* executable;
@@ -39,10 +39,10 @@ In case if no Rust executable for your platform or you like to build everything 
 
 1. obtain [rb](https://sourceforge.net/projects/seven-bee/files/Release%201.3.1/) or build from [source](https://gitlab.com/tools6772135/rusthub/-/tree/master/src/rust/rustbee)
 2. clone [base32](https://github.com/andreasots/base32/tree/master), [simweb](https://github.com/vernisaz/simweb),
-[simjson](https://github.com/vernisaz/simjson), and [simscript](https://github.com/vernisaz/simscript)
+[simjson](https://github.com/vernisaz/simjson), and [simscript](https://github.com/vernisaz/simscript) repositories
 
-First, build all dependencies by executing _rb_ in their repositories. _simscript_ doesn't need to be built. [bee.7b](https://github.com/vernisaz/simtotp/blob/master/dep%20crates/README.md)
-is provided for _base32_. And then execute _rb_ here.
+First, build all dependencies by executing _rb_ in their directories. _simscript_ doesn't need to be built. [bee.7b](https://github.com/vernisaz/simtotp/blob/master/dep%20crates/README.md)
+is provided for _base32_. And after building the dependencies, execute _rb_ to build the final application.
 
 ## packaging
 There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit _env.conf_
