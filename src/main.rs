@@ -5,6 +5,7 @@ Below is an example of Rust code for generating a TOTP.
 extern crate base32;
 extern crate simweb;
 extern crate simjson;
+extern crate simcfg;
 mod sha1;
 mod hmac;
 use sha1::Sha1;
@@ -76,20 +77,19 @@ fn main() -> io::Result<()> {
     let mut home_set = false;
     if let Ok(ws_exe) = totp {
         if let Some(current_path) = ws_exe.parent() {
-            let home_file = current_path.join(".home");
+            let home_file = current_path.join(".config");
             if let Ok(home_str) = read_to_string(&home_file) {
                 home = PathBuf::from(home_str.trim());
                 home_set = true;
             } else {
-                eprintln! {"Misconfiguration: HOME isn't set in .home in {:?} yet", &home_file};
-                match std::env::home_dir() {
-                    Some(dir) => {
-                        fs::write(&home_file, &dir.display().to_string())?;
-                        home = dir;
+                eprintln! {"Misconfiguration: config home isn't set in .config in {:?} yet", &home_file};
+                match simcfg::get_config_root() {
+                    Ok(config_dir) => {fs::write(&home_file, &config_dir.display().to_string())?;
+                        home = config_dir;
                         home_set = true
                     }
-                    None => {
-                        // more likelly web mode and home not set
+                    Err(err) => {
+                        eprintln! {"{err:?}"}
                     }
                 }
             }
@@ -101,12 +101,16 @@ fn main() -> io::Result<()> {
                     home = dir
                 }
                 None => {
-                    eprintln!("Can't obtain HOME from env or file, exiting");
+                    eprintln!("Can't obtain config directory from env or file, exiting");
                     std::process::exit(1)
                 }
         }
     }
     home.push(".simtotp");
+    if !home.exists() {
+        fs::create_dir_all(&home)?;
+    }
+    home.push("directory"); home.set_extension("db");
     if std::env::var("QUERY_STRING").is_err() {
         // CLI mode
         let args: Vec<String> = env::args().collect();
