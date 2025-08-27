@@ -7,7 +7,8 @@ Use the script to build it:
 ```
 # from https://github.com/andreasots/base32/tree/master
 crate  =base32
-crate main=src${~/~}lib
+crate_src=src
+crate main=lib
 dep_crates=[]
 comp opts=[]
 test file=test
