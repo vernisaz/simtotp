@@ -28,10 +28,11 @@ The following fragment has to be added in the mapping section of the server:
 Obviously that CGI Rust app can be in the same directory, where the rest of web resources reside. It should be
 reflecting in *mapping* though.
 
-The program needs to know *HOME* directory to successfully function. It gets obtained automatically at
-the first run when the program invoked from a **terminal**. It doesn't matter if the program reported some errors.
+The program needs to know *common config* directory to successfully function. It gets obtained automatically at
+the first run when the program invoked from a **terminal**. It's okay if the program reported some errors.
 
-If _.home_ file wasn't created for some reason. You can create it manually with a string with full HOME directory path.
+If _.config_ file wasn't created for some reason. You can create it manually with a string 
+containing a fully qualified _common config_ directory path. 
 The file has to be in the same directory as *simtotp* executable;
 
 ## building
@@ -44,10 +45,10 @@ In case if no Rust executable for your platform or you like to build everything 
 and [simscript](https://github.com/vernisaz/simscript) repositories
 
 First, build all dependencies by executing _rb_ in their repositories. _simscript_ doesn't need to be built. [bee.7b](https://github.com/vernisaz/simtotp/blob/master/dep%20crates/README.md)
-is provided for _base32_. And after building the dependencies, execute _rb_ here to build the final application.
+is provided for _base32_. And after building the dependencies, execute the _rb_ here to build a final application.
 
 ## packaging
-There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit _env.conf_
+There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit the _env.conf_
 after unzipping the package to avoid a port conflict.
 
 ## accessing
