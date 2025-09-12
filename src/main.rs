@@ -369,7 +369,7 @@ fn main() -> io::Result<()> {
 }
 
 impl simweb::WebPage for Response<'_> { 
-    fn main_load(&self) -> Result<String, String> {
+    fn main_load(&self) -> Result<String, Box<(dyn std::error::Error + 'static)>> {
         Ok(self.json.to_string ())
     }
     fn content_type(&self) -> &str {
