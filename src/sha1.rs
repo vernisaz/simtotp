@@ -15,11 +15,10 @@ impl Sha1 {
         Sha1 {}
     }
 
-    /// Computes the SHA-1 hash of the input string by taking in either a String of str type.
+    /// Computes the SHA-1 hash of the input byte array which can be a string or str type.
     pub fn hash(&mut self, key: &[u8]) -> [u8; 20] {
         // Initialize variables to the SHA-1's initial hash values.
         let (mut h0, mut h1, mut h2, mut h3, mut h4) = (H0, H1, H2, H3, H4);
-        //let (mut a, mut b, mut c, mut d, mut e) = (H0, H1, H2, H3, H4);
 
         // Pad our key
         let msg = self.pad_message(key);
@@ -30,11 +29,6 @@ impl Sha1 {
             let schedule = self.build_schedule(chunk);
 
             let (mut a, mut b, mut c, mut d, mut e) = (h0, h1, h2, h3, h4);
-            /*a = h0;
-            b = h1;
-            c = h2;
-            d = h3;
-            e = h4;*/
 
             // Main loop of the SHA-1 algorithm using predefind values based on primes numbers.
             for i in 0..80 {
