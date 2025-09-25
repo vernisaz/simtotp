@@ -30,7 +30,7 @@ function computeBlockSizedKey is
 
     return  key
 */
-use Sha1;
+use crate::Sha1;
 // TODO use one instance Sha1
 pub fn hmac(key:&[u8], message: &[u8], block_size: usize) -> [u8;20]{
     let mut sha1 = Sha1::new();

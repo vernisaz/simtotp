@@ -123,7 +123,9 @@ fn main() -> io::Result<()> {
             simweb::url_encode(&args[1]), args[2], if args.len() > 3 {simweb::url_encode(&args[3])} else {"".to_string()},
             if args.len() > 4 {simweb::url_encode(&args[4])} else {"".to_string()}, if args.len() > 5 {args[5].clone()} else {"".to_string()});
         eprintln!("{query_str}");
+        unsafe {
         env::set_var("QUERY_STRING",query_str)
+        }
     } //else {eprintln!("{:?}", env::var("QUERY_STRING"));}
 
     let web = simweb::WebData::new();
@@ -369,7 +371,7 @@ fn main() -> io::Result<()> {
 }
 
 impl simweb::WebPage for Response<'_> { 
-    fn main_load(&self) -> Result<String, Box<(dyn std::error::Error + 'static)>> {
+    fn main_load(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
         Ok(self.json.to_string ())
     }
     fn content_type(&self) -> &str {
