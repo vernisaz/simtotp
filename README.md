@@ -10,11 +10,11 @@ I decided to wrap AI response in a working app without too much extra dependenci
 
 ## how
 It's CLI app with the web interface. If you run it in a terminal, you operate using regular command
-operands, otherwise you can get response in JSON and display it in a browser.
+operands, however you will get a response in JSON format which is a browser friendly.
 
 ## CLI & Web interface
 The program expects arguments as an HTTP query string specified in the env value `QUERY_STRING`. When the program
-runs as CLI app, it detects that no such env variable, and then generates it based on the program arguments.
+runs as a CLI app, it detects that no such env variable, and then generates it based on the program arguments.
 
 ## configuring the [Simple HTTP](https://github.com/vernisaz/simhttp)
 The following fragment has to be added in the mapping section of the server:
@@ -29,11 +29,12 @@ Obviously that CGI Rust app can be in the same directory, where the rest of web 
 reflecting in *mapping* though.
 
 The program needs to know *common config* directory to successfully function. It gets obtained automatically at
-the first run when the program invoked from a **terminal**. It's okay if the program reported some errors.
+the first run when the program invoked from the **terminal**. It's okay if the program reported some errors.
 
 If _.config_ file wasn't created for some reason. You can create it manually with a string 
 containing a fully qualified _common config_ directory path. 
-The file has to be in the same directory as *simtotp* executable;
+The file has to be in the same directory as *simtotp* executable. CGI app can't obtain the directory
+from the environment, because it runs sandboxed.
 
 ## building
 In case if no Rust executable for your platform or you like to build everything by yourself, you will need to:
@@ -48,11 +49,19 @@ First, build all dependencies by executing _rb_ in their repositories. _simscrip
 is provided for _base32_. And after building the dependencies, execute the _rb_ here to build a final application.
 
 ## packaging
-There is the _package_ **RustBee** script goal to convenient package the application. You sill may need to edit the _env.conf_
+There is the `package` **RustBee** script target for a convenient packaging of the application.
+You sill may need to edit the _env.conf_
 after unzipping the package to avoid a port conflict.
 
 ## accessing
 An access URL looks like: `http://localhost:3000/totp/`, the ending slash is essential.
+
+## usage
+The password is used for encryption of the stored data. Select any, and then do not lose it,
+otherwise your stored data will be lost and you will need to enter them again.
+
+The secret is stored under **namespace/account**. Select **namespace/account** when you 
+need to generate a code after.
 
 ## references
 1. [hmac description](https://en.wikipedia.org/wiki/HMAC)

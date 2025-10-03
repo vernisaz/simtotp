@@ -2,10 +2,10 @@
 
 ## base32
 
-Use the script to build it:
+Use the script to build the crate:
 
 ```
-# from https://github.com/andreasots/base32/tree/master
+# check out the repository from https://github.com/andreasots/base32/tree/master
 crate  =base32
 crate_src=src
 crate main=lib
@@ -35,4 +35,4 @@ The script assumes the following directories structure:
 ....
 ```
 
-Paths may need to be corrected in the script in a case of a different directories structure.  
+Paths may need to be corrected in the script in the case of a different directories structure.  

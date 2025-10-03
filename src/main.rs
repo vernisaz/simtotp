@@ -111,7 +111,7 @@ fn main() -> io::Result<()> {
         fs::create_dir_all(&home)?;
     }
     home.push("directory"); home.set_extension("db");
-    if std::env::var("QUERY_STRING").is_err() {
+    if std::env::var("QUERY_STRING").is_err() { // run as CLI
         // CLI mode
         let args: Vec<String> = env::args().collect();
         if args.len() <= 3  {
@@ -124,9 +124,9 @@ fn main() -> io::Result<()> {
             if args.len() > 4 {simweb::url_encode(&args[4])} else {"".to_string()}, if args.len() > 5 {args[5].clone()} else {"".to_string()});
         eprintln!("{query_str}");
         unsafe {
-        env::set_var("QUERY_STRING",query_str)
+            env::set_var("QUERY_STRING",query_str)
         }
-    } //else {eprintln!("{:?}", env::var("QUERY_STRING"));}
+    }
 
     let web = simweb::WebData::new();
     let mut password;
