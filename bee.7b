@@ -3,7 +3,7 @@ main=src${~/~}main
 common =..${~/~}simscript${~/~}comm-build.7b:file
 crate_dir=..${~/~}crates
 comp opts=[--extern, simweb]
-version=1.02
+version=1.03
 simhttp proj=..${~/~}simhttp
 
 set_env(VERSION,version)
