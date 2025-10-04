@@ -9,13 +9,23 @@ extern crate simcfg;
 mod sha1;
 mod hmac;
 use sha1::Sha1;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{time::{SystemTime, UNIX_EPOCH}, fmt, convert::TryInto, error::Error};
 use hmac::hmac;
 use simweb::{WebPage,json_encode};
 use simjson::{JsonData::{self}};
-use std::convert::TryInto;
    
 const VERSION: &str = env!("VERSION");
+
+#[derive(Debug)]
+pub struct TOTPError {
+    cause: String,
+}
+impl fmt::Display for TOTPError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Err: {}", self.cause)
+    }
+}
+impl std::error::Error for TOTPError {}
 
 /// Generates a TOTP code.
 ///
@@ -65,7 +75,7 @@ struct Response<'a> {
     json: &'a str,
 }
 
-fn main() -> io::Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
    #[cfg(test)]
     {
     let test = hmac(b"key", b"The quick brown fox jumps over the lazy dog", 64);
@@ -139,7 +149,15 @@ fn main() -> io::Result<()> {
             return Ok(())
         }
     }
-    let mut namespaces = read_db(&home, &password);
+    let mut namespaces = match read_db(&home, &password) {
+        Ok(namespaces) => namespaces,
+        Err(err) => {
+            Response {
+                json:&format!(r#"{{"error":"DB can't be read correctly {err}"}}"#),
+            }.show();
+            return Ok(())
+        }
+    };
     let mut json:&str = "{}";
     let mut update_db = false;
     let op = web.param("op").unwrap_or(String::new());
@@ -334,10 +352,10 @@ fn main() -> io::Result<()> {
         }
         "dndb" => { // download db
             if let Some(dn_password) = web.param("dnpassword") {
-                let db = write_db(&dn_password, namespaces);
+                let db = write_db(&dn_password, &namespaces);
                 // Content-Lengt will be recalculated by CGI provider anyway
                 print!("Content-Length: {}\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename=\"totp.db\"\r\n\r\n", db.len());
-                return io::stdout().write_all(&db[..])
+                io::stdout().write_all(&db[..])?
             }
             json = r#"{"error":"no no db password"}"#;
         }
@@ -347,10 +365,16 @@ fn main() -> io::Result<()> {
                 Some(file) => {
                     let up_password = web.param("uppassword") .unwrap_or(String::new());
                     let up_file = PathBuf::from(&file);
-                    namespaces = read_db(&up_file, &up_password);
-                    let _ = fs::remove_file(up_file);
-                    update_db = true;
-                    json = r#"{"ok":true}"#;
+                    match read_db(&up_file, &up_password) {
+                        Ok(new_namespaces) => {
+                            namespaces = new_namespaces;
+                            let _ = fs::remove_file(up_file);
+                            update_db = true;
+                            json = r#"{"ok":true}"#;
+                        }
+                        Err(err) => {code_str = format!("Can't correctly read new DB {err}");
+                            json = &code_str;},
+                    }
                 }
             }
         }
@@ -364,7 +388,7 @@ fn main() -> io::Result<()> {
         json:json,
     }.show();
     if update_db {
-        fs::write(&home,write_db(&password, namespaces))
+        Ok(fs::write(&home,write_db(&password, &namespaces))?)
     } else {
         Ok(())
     }
@@ -379,7 +403,7 @@ impl simweb::WebPage for Response<'_> {
     }
 }
 
-fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> HashMap<String, HashMap<String,String>> {
+fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> Result<HashMap<String, HashMap<String,String>>, TOTPError> {
     let mut res = HashMap::new();
     match fs::read(&home) {
         Ok(mut data) => {
@@ -413,15 +437,16 @@ fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> HashMap<String, HashMap<
                         }
                     }
                 }
-                 _ => ()
+                JsonData::Err(reason) => return Err(TOTPError{cause:format!("corrupted DB, probably wrong password: {reason}")}),
+                _ => return Err(TOTPError{cause:"unexpected data organization".to_string()})
             }
         }
-         _ => ()
+         _ => eprintln!("new DB created")
     }
-    res
+    Ok(res)
 }
 
-fn write_db(password: &str, db: HashMap<String, HashMap<String,String>>) -> Vec<u8> {
+fn write_db(password: &str, db: &HashMap<String, HashMap<String,String>>) -> Vec<u8> {
     let mut res = String::from("{");
     for (key, value) in db.iter() {
         if key.is_empty() { continue }
