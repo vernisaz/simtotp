@@ -7,6 +7,8 @@ version=1.03
 simhttp proj=..${~/~}simhttp
 
 set_env(VERSION,version)
+cfg()
+assign(config_file,${~~}${~/~}.simtotp)
 
 if {
 	eq(${~os~},windows)
@@ -14,14 +16,15 @@ if {
 		assign(ext,.exe)
 		assign(scr_ext,.bat)
 		assign(script,START /B .\bin\simhttp.exe %1)
-		assign(slash,\\\\)
+		assign(uninstall,RMDIR /s /q "${config_file}")
 	}
 	else {
 		assign(ext,)
 		assign(scr_ext,.sh)
 		assign(script,"#!/bin/sh
 ./bin/simhttp $1&")
-        assign(slash,/)
+		assign(uninstall,"#!/bin/sh
+rm -rf \"${config_file}\"")
 	}
 }
 
@@ -47,19 +50,19 @@ target package {
    \"mapping\" : [
        {\"path\":\"/totp/bin\", \"_comment_\": \"Simple TOTP using Rust\",
 	   \"CGI\": true,
-	   \"translated\": \".${slash}\"},
+	   \"translated\": \".${~/~}\"},
 	   {\"path\":\"/totp\",
-	   \"translated\": \".${slash}\"}
+	   \"translated\": \".${~/~}\"}
    ],
     \"log\" : {
           \"out\": {
                   \"out _comment_\": \"file\",
                   \"name\": \"simtotp-${0}\",
-                  \"path\":\".${slash}\",
+                  \"path\":\".${~/~}\",
                   \"max lines\": 1200,
                   \"max files\": 20
           },
-          \"level\":2
+          \"type\":\"access\"
     },
     \"mime\":
         [
@@ -67,7 +70,7 @@ target package {
         {\"ext\":\"htm\", \"type\":\"text/html\"},
         {\"ext\":\"txt\",\"type\":\"text/plain\"}
     ]}"
-    zip(.${~/~}simtotp-${version}.zip,
+    zip(simtotp-${version}.zip,
     -A ${project}/env.conf,
 	${http conf},
 	-B ${project}/bin,
@@ -82,6 +85,8 @@ target package {
 	.${~/~}simtotp${ext},
 	-B ${project},
 	.${~/~}README.md,
+	-E ${project}/uninstall${scr_ext},
+	"${uninstall}",
 	-E ${project}/httptotp${scr_ext},
 	"${script}")
 	display(done ${~~})
