@@ -74,6 +74,10 @@ it can be shared between several devices. It makes it an ideal for a private clo
 The installation package contains `uninstall` script. It will delete the application data, and then 
 the application directory can be safely removed using a file manager, or a command line tool.
 
+## future enhancements
+Method POST can be reasonable for commands modifying the database and password as a protection
+from CSRF attacks.
+
 ## references
 1. [hmac description](https://en.wikipedia.org/wiki/HMAC)
 2. [hmac algorithm in JS](https://gist.github.com/stevendesu/2d52f7b5e1f1184af3b667c0b5e054b8)
