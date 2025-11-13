@@ -133,7 +133,7 @@
               }
               document.querySelector('#secret').value = ''
               loadNamespaces()
-        }})
+        }, fail: (code,reason) => { document.querySelector('#message').textContent = `Network error:${reason}`; }})
     }
     function del() {
         if (!checkPassword())
