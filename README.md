@@ -41,14 +41,17 @@ Any other web server capable to run CGI scripts can be also used.
 ## building
 In case if no Rust executable for your platform or you like to build everything by yourself, you will need to:
 
-1. obtain [rb](https://github.com/vernisaz/rust_bee/releases/tag/v1.15.01) or build from [source](https://github.com/vernisaz/rust_bee)
+1. obtain [rb](https://github.com/vernisaz/rust_bee/releases/tag/v1.15.02) or build it from [source](https://github.com/vernisaz/rust_bee)
 2. clone [base32](https://github.com/andreasots/base32/tree/master), [SimTime](https://github.com/vernisaz/simtime),
 [simweb](https://github.com/vernisaz/simweb),
 [simjson](https://github.com/vernisaz/simjson), [SimConfig](https://github.com/vernisaz/simconfig),
 and [simscript](https://github.com/vernisaz/simscript) repositories
 
-First, build all dependencies by executing _rb_ in their repositories. _simscript_ doesn't need to be built. [bee.7b](https://github.com/vernisaz/simtotp/blob/master/dep%20crates/README.md)
+First, build all dependencies by executing _rb_ in their repositories. _simscript_ doesn't need to be built.
+[bee.7b](https://github.com/vernisaz/simtotp/blob/master/dep%20crates/README.md)
 is provided for _base32_. And after building the dependencies, execute the _rb_ here to build a final application.
+
+You can generate a deplyment package after by executing `rb package`.
 
 ## packaging
 There is the **RustBee** script target – `package` for a convenient packaging of the application.
