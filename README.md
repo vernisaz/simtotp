@@ -28,13 +28,15 @@ The following fragment has to be added in the mapping section of the server:
 Obviously that CGI Rust app can be in the same directory, where the rest of web resources reside. It should be
 reflecting in *mapping* though.
 
-The program needs to know *common config* directory to successfully function. It gets obtained automatically at
+The program needs to know *common config* directory to successfully work. It gets obtained automatically at
 the first run when the program invoked from a **terminal**. It's okay if the program reported some errors.
 
 If _.config_ file wasn't created for some reason. You can create it manually with a string 
 containing a fully qualified _common config_ directory path. 
 The file has to be in the same directory as *simtotp* executable. CGI app can't obtain the directory
 from the environment, because it runs sandboxed.
+
+Any other web server capable to run CGI scripts can be also used.
 
 ## building
 In case if no Rust executable for your platform or you like to build everything by yourself, you will need to:
@@ -59,12 +61,13 @@ An access URL looks like: `http://localhost:3000/totp/`, the ending slash is ess
 ## usage
 The password is used for encryption of the stored data. Select any, and then use it when work with the application. 
 
-The secret is stored under **namespace/account**. Select **namespace/account** when you 
+The secret is stored under **namespace/account**. Select the desired **namespace/account** when you 
 need to generate a code after.
 
-If you lost or forgot the password for some reason, then execute the `uninstall` script and then fill the
+If you lost or forgot the password, then execute the `uninstall` script and then fill in the
 application data again. It's recommended to create a backup copy of the data and store 
-on some flash drive with easy to remember or no password and then, use it in case of an emergency.
+on a flash drive or other secured backup storage with easy to remember or no password and then, 
+use it in a case of emergency.
 
 The application has benefits against PWA as [pwa-otp](https://github.com/maxerenberg/pwa-otp), because
 it can be shared between several devices. It makes it an ideal for a private cloud.
