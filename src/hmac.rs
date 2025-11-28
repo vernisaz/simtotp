@@ -48,7 +48,7 @@ pub fn hmac(key:&[u8], message: &[u8], block_size: usize) -> [u8;20]{
 	// Append the inner_key
 	let mut msg = vec![0u8; message.len() + block_size];
 	msg[0..inner_key.len()].copy_from_slice(&inner_key[..]);
-	msg[inner_key.len()..].copy_from_slice(&message[..]);
+	msg[inner_key.len()..].copy_from_slice(message);
 
 	// Has the previous message and append the outer_key
 	let mut result = vec![0u8; block_size + 20];
@@ -65,7 +65,7 @@ fn compute_block_sized_key(key:&[u8], sha1: &mut Sha1, block_size: usize ) -> Ve
         res[0..20].copy_from_slice(&sha1.hash(key))
     }
     if key.len() <= block_size {
-        res[0..key.len()].copy_from_slice(&key)
+        res[0..key.len()].copy_from_slice(key)
     }
     res
 }

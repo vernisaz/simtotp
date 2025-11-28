@@ -94,7 +94,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             } else {
                 eprintln! {"Misconfiguration: config home isn't set in .config in {:?} yet", &home_file};
                 match simcfg::get_config_root() {
-                    Ok(config_dir) => {fs::write(&home_file, &config_dir.display().to_string())?;
+                    Ok(config_dir) => {fs::write(&home_file, config_dir.display().to_string())?;
                         home = config_dir;
                         home_set = true
                     }
@@ -160,14 +160,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let mut json:&str = "{}";
     let mut update_db = false;
-    let op = web.param("op").unwrap_or(String::new());
+    let op = web.param("op").unwrap_or_default();
     let mut res = String::new();
     let code_str: String;
     match op.as_str() {
         "lsns" => { // list of namespaces
             res.push('[');
-            for (ns,_) in &namespaces {
-                write!(res,r#""{}","#,json_encode(&ns)).unwrap();
+            for ns in namespaces.keys() {
+                write!(res,r#""{}","#,json_encode(ns)).unwrap();
             }
             write!(res,r#"""]"#).unwrap();
             json = &res
@@ -178,8 +178,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let acns = namespaces.get(&ns);
                         if let Some(acns) = acns {
                         res.push('[');
-                        for (acn,_) in acns {
-                            write!(res,r#""{}","#,json_encode(&acn)).unwrap();
+                        for acn in acns.keys() {
+                            write!(res,r#""{}","#,json_encode(acn)).unwrap();
                         }
                         write!(res,r#"""]"#).unwrap();
                         json = &res
@@ -244,8 +244,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             if !done {
                  json = r#"{"error":"Insufficient info to add an account."}"#;
-            } else {
-                
             }
         }
         "upse" => { // update a secret for an account
@@ -319,19 +317,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         "moac" => { // modify an account name
             let mut done = false;
             if let Some(name) = web.param("name") {
-                if let Some(acn) = web.param("account") {
-                    if let Some(new_name) = web.param("newname") {
-                        if let Some(ns) = namespaces.get_mut(&name) {
-                            if !new_name.is_empty() {
-                                let secret = ns.remove(&acn);
-                                if let Some(secret) = secret {
-                                    ns.insert(new_name, secret);
-                                    done = true;
-                                    update_db = true;
-                                    json = r#"{"ok":true}"#;
-                                }
-                            }
-                        }
+                if let Some(acn) = web.param("account") 
+                && let Some(new_name) = web.param("newname")
+                && let Some(ns) = namespaces.get_mut(&name) 
+                && !new_name.is_empty() {
+                    let secret = ns.remove(&acn);
+                    if let Some(secret) = secret {
+                        ns.insert(new_name, secret);
+                        done = true;
+                        update_db = true;
+                        json = r#"{"ok":true}"#;
                     }
                 }
             }
@@ -363,7 +358,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             match web.param("upFile") {
                 None => json = r#"{"error":"nothing was uploaded"}"#,
                 Some(file) => {
-                    let up_password = web.param("uppassword") .unwrap_or(String::new());
+                    let up_password = web.param("uppassword") .unwrap_or_default();
                     let up_file = PathBuf::from(&file);
                     match read_db(&up_file, &up_password) {
                         Ok(new_namespaces) => {
@@ -385,7 +380,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
     Response {
-        json:json,
+        json,
     }.show();
     if update_db {
         Ok(fs::write(&home,write_db(&password, &namespaces))?)
@@ -405,10 +400,10 @@ impl simweb::WebPage for Response<'_> {
 
 fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> Result<HashMap<String, HashMap<String,String>>, TOTPError> {
     let mut res = HashMap::new();
-    match fs::read(&home) {
+    match fs::read(home) {
         Ok(mut data) => {
             let password = password.as_bytes();
-            if password.len() > 0 {
+            if !password.is_empty() {
                 for i in 0..data.len() {
                     data[i] ^= password[i % password.len()]
                 }
@@ -424,12 +419,9 @@ fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> Result<HashMap<String, H
                                 let mut a_res = HashMap::new();
                                 for (a_key, a_value) in acn.iter() {
                                     if a_key.is_empty() { continue }
-                                    match a_value {
-                                         JsonData::Text(secret) => {
-                                             a_res.insert(a_key.to_string(), secret.to_string());
-                                         }
-                                         _ => ()
-                                    }
+                                    if let JsonData::Text(secret) = a_value {
+                                         a_res.insert(a_key.to_string(), secret.to_string());
+                                     }
                                 }
                                 res.insert(key.to_string(), a_res);
                             }
@@ -462,7 +454,7 @@ fn write_db(password: &str, db: &HashMap<String, HashMap<String,String>>) -> Vec
     write!(res,r#""":{{}} }}"#).unwrap();
     let password = password.as_bytes();
     let mut byte_vec: Vec<u8> = res.into_bytes();
-    if password.len() > 0 {
+    if !password.is_empty() {
         for i in 0..byte_vec.len() {
             byte_vec[i] ^= password[i % password.len()]
         } 
