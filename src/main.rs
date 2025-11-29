@@ -85,25 +85,24 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     let mut home = PathBuf::new();
     let mut home_set = false;
-    if let Ok(ws_exe) = totp {
-        if let Some(current_path) = ws_exe.parent() {
-            let home_file = current_path.join(".config");
-            if let Ok(home_str) = read_to_string(&home_file) {
-                home = PathBuf::from(home_str.trim());
-                home_set = true;
-            } else {
-                eprintln! {"Misconfiguration: config home isn't set in .config in {:?} yet", &home_file};
-                match simcfg::get_config_root() {
-                    Ok(config_dir) => {fs::write(&home_file, config_dir.display().to_string())?;
-                        home = config_dir;
-                        home_set = true
-                    }
-                    Err(err) => {
-                        eprintln! {"{err:?}"}
-                    }
+    if let Ok(ws_exe) = totp &&
+        let Some(current_path) = ws_exe.parent() {
+        let home_file = current_path.join(".config");
+        if let Ok(home_str) = read_to_string(&home_file) {
+            home = PathBuf::from(home_str.trim());
+            home_set = true;
+        } else {
+            eprintln! {"Misconfiguration: config home isn't set in .config in {:?} yet", &home_file};
+            match simcfg::get_config_root() {
+                Ok(config_dir) => {fs::write(&home_file, config_dir.display().to_string())?;
+                    home = config_dir;
+                    home_set = true
+                }
+                Err(err) => {
+                    eprintln! {"{err:?}"}
                 }
             }
-        } 
+        }
     }
     if !home_set {
         match std::env::home_dir() {
@@ -189,109 +188,80 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         "gen" => { // generate TOTP code
-            let mut done = false;
-            if let Some(name) = web.param("name") {
-                if let Some(acn) = web.param("account") {
-                    //let secret;
-                    if let Some(ns) = namespaces.get(&name) {
-                        if let Some(web_secret) = ns.get(&acn) {
-                            let digits = 6;
-                            let step = 30;
-                            if let Some(secret) = base32::decode(Alphabet::Rfc4648 { padding: false }, &web_secret) {
-                                match generate_totp(&secret, digits, step) {
-                                    Some(code) => {
-                                        code_str = format!(r#"{{"code":"{:0>width$}"}}"#, code, width = digits as usize);
-                                        json = &code_str;
-                                        eprintln!("Current TOTP code: {:0>width$}", code, width = digits as usize);
-                                    }
-                                    None => {
-                                        json = r#"{"error":"Failed to generate TOTP code."}"#;
-                                        eprintln!("Failed to generate TOTP code.");
-                                    }
-                                }
-                            } else {
-                                json = r#"{"error":"The secret isn't valid base32 value."}"#;
+            if let Some(name) = web.param("name") &&
+                let Some(acn) = web.param("account") &&
+                let Some(ns) = namespaces.get(&name) &&
+                let Some(web_secret) = ns.get(&acn) {
+                    let digits = 6;
+                    let step = 30;
+                    if let Some(secret) = base32::decode(Alphabet::Rfc4648 { padding: false }, web_secret) {
+                        match generate_totp(&secret, digits, step) {
+                            Some(code) => {
+                                code_str = format!(r#"{{"code":"{:0>width$}"}}"#, code, width = digits as usize);
+                                json = &code_str;
+                                eprintln!("Current TOTP code: {:0>width$}", code, width = digits as usize);
                             }
-                            done = true;
+                            None => {
+                                json = r#"{"error":"Failed to generate TOTP code."}"#;
+                                eprintln!("Failed to generate TOTP code.");
+                            }
                         }
                     } else {
-                        eprintln!("no namespace {name} in {namespaces:?}")
+                        json = r#"{"error":"The secret isn't valid base32 value."}"#;
                     }
-                }
-            }
-            if !done {
-                 json = r#"{"error":"Insufficient info to generate TOTP code."}"#;
+            } else {
+                json = r#"{"error":"Insufficient info to generate TOTP code."}"#;
             }
         }
         "adac" => { // add an account with a secret
-            let mut done = false;
-            if let Some(name) = web.param("name") {
-                if let Some(acn) = web.param("account") {
-                    if let Some(secret) = web.param("secret") {
-                        if let Some(ns) = namespaces.get_mut(&name) {
-                            
-                            ns.insert(acn, secret);
-                        } else {
-                            let mut ns = HashMap::new();
-                            ns.insert(acn, secret);
-                            namespaces.insert(name.clone(),ns);
-                        }
-                        done = true;
-                        update_db = true;
-                        json = r#"{"ok":true}"#;
-                    }
+            if let Some(name) = web.param("name") &&
+                let Some(acn) = web.param("account") &&
+                let Some(secret) = web.param("secret") {
+                if let Some(ns) = namespaces.get_mut(&name) {
+                    ns.insert(acn, secret);
+                } else {
+                    let mut ns = HashMap::new();
+                    ns.insert(acn, secret);
+                    namespaces.insert(name.clone(),ns);
                 }
-            }
-            if !done {
+                update_db = true;
+                json = r#"{"ok":true}"#;
+            } else {
                  json = r#"{"error":"Insufficient info to add an account."}"#;
             }
         }
         "upse" => { // update a secret for an account
-            let mut done = false;
-            if let Some(name) = web.param("name") {
-                if let Some(acn) = web.param("account") {
-                    if let Some(secret) = web.param("secret") {
-                        if let Some(ns) = namespaces.get_mut(&name) {
-                            if !secret.is_empty() {
-                                // TODO if no such account
-                                ns.insert(acn, secret);
-                                done = true;
-                                update_db = true;
-                                json = r#"{"ok":true}"#;
-                            }
-                        }
-                    }
-                }
-            }
-            if !done {
-                 json = r#"{"error":"Insufficient info to update the secret."}"#;
+            if let Some(name) = web.param("name") &&
+                let Some(acn) = web.param("account") &&
+                let Some(secret) = web.param("secret") &&
+                let Some(ns) = namespaces.get_mut(&name) &&
+                !secret.is_empty() {
+                    // TODO if no such account
+                    ns.insert(acn, secret);
+                    update_db = true;
+                    json = r#"{"ok":true}"#;
+            } else {
+                json = r#"{"error":"Insufficient info to update the secret."}"#;
             }
         }
         "deac" => { // delete an account
-            let mut done = false;
-            if let Some(name) = web.param("name") {
-                if let Some(acn) = web.param("account") {
-                    if let Some(ns) = namespaces.get_mut(&name) {
-                        if ns.remove(&acn).is_some() {
-                            done = true;
-                            update_db = true;
-                            json = r#"{"ok":true}"#;
-                        }
-                    }
-                }
-            }
-            if !done {
-                 json = r#"{"error":"No such account."}"#;
+            if let Some(name) = web.param("name") &&
+                let Some(acn) = web.param("account") &&
+                let Some(ns) = namespaces.get_mut(&name) &&
+                ns.remove(&acn).is_some() {
+                    update_db = true;
+                    json = r#"{"ok":true}"#;
+            } else {
+                json = r#"{"error":"No such account."}"#;
             }
         }
         "dens" => { // delete a namespace
             let mut done = false;
-            if let Some(name) = web.param("name") {
-                if namespaces.remove(&name).is_some() {
-                    done = true;
-                    update_db = true;
-                    json = r#"{"ok":true}"#;
-                }
+            if let Some(name) = web.param("name") 
+                && namespaces.remove(&name).is_some() {
+                done = true;
+                update_db = true;
+                json = r#"{"ok":true}"#;
             }
             if !done {
                  json = r#"{"error":"No such namespace."}"#;
@@ -299,16 +269,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         "mons" => { // modify a namespace name
             let mut done = false;
-            if let Some(name) = web.param("name") {
-                if let Some(new_name) = web.param("newname") {
-                    if let Some(ns) = namespaces.remove(&name) {
-                        namespaces.insert(new_name, ns);
-                        
-                        done = true;
-                        update_db = true;
-                        json = r#"{"ok":true}"#;
-                    }
-                }
+            if let Some(name) = web.param("name") 
+                && let Some(new_name) = web.param("newname")
+                && let Some(ns) = namespaces.remove(&name) {
+                    namespaces.insert(new_name, ns);
+                    done = true;
+                    update_db = true;
+                    json = r#"{"ok":true}"#;
             }
             if !done {
                  json = r#"{"error":"No such namespace."}"#;
@@ -316,18 +283,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         "moac" => { // modify an account name
             let mut done = false;
-            if let Some(name) = web.param("name") {
-                if let Some(acn) = web.param("account") 
+            if let Some(name) = web.param("name") 
+                && let Some(acn) = web.param("account") 
                 && let Some(new_name) = web.param("newname")
                 && let Some(ns) = namespaces.get_mut(&name) 
                 && !new_name.is_empty() {
-                    let secret = ns.remove(&acn);
-                    if let Some(secret) = secret {
-                        ns.insert(new_name, secret);
-                        done = true;
-                        update_db = true;
-                        json = r#"{"ok":true}"#;
-                    }
+                let secret = ns.remove(&acn);
+                if let Some(secret) = secret {
+                    ns.insert(new_name, secret);
+                    done = true;
+                    update_db = true;
+                    json = r#"{"ok":true}"#;
                 }
             }
             if !done {
