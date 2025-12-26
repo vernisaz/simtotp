@@ -2,7 +2,7 @@
 
 ## base32
 
-Use the script to build the crate:
+Use below script to build the crate:
 
 ```
 # check out the repository from https://github.com/andreasots/base32/tree/master
