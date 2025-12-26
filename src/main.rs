@@ -160,27 +160,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut json:&str = "{}";
     let mut update_db = false;
     let op = web.param("op").unwrap_or_default();
-    let mut res = String::new();
+    let res;
     let code_str: String;
     match op.as_str() {
         "lsns" => { // list of namespaces
-            res.push('[');
-            for ns in namespaces.keys() {
-                write!(res,r#""{}","#,json_encode(ns)).unwrap();
-            }
-            write!(res,r#"""]"#).unwrap();
+            res = format!("[{}]", namespaces.keys().map(|k| format!(r#""{}""#, json_encode(k))).collect::<Vec<_>>().join(","));
             json = &res
         }
         "lsac" => { // list of accounts in a namespace
             match web.param("name") {
                 Some(ns) => {
                     let acns = namespaces.get(&ns);
-                        if let Some(acns) = acns {
-                        res.push('[');
-                        for acn in acns.keys() {
-                            write!(res,r#""{}","#,json_encode(acn)).unwrap();
-                        }
-                        write!(res,r#"""]"#).unwrap();
+                    if let Some(acns) = acns {
+                        res = format!("[{}]", acns.keys().map(|k| format!(r#""{}""#, json_encode(k))).collect::<Vec<_>>().join(","));
                         json = &res
                     } else { json = r#"{"error":"no namespace"}"# }
                 }
