@@ -148,6 +148,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             return Ok(())
         }
     }
+    let op = web.param("op").unwrap_or_default();
+    let op = op.as_str();
+    if op == "vers" {
+        return Ok(
+            Response {
+                json:&format!(r#"{{"version":"v{VERSION}","ok":true}}"#),
+            }.show())
+    }
     let mut namespaces = match read_db(&home, &password) {
         Ok(namespaces) => namespaces,
         Err(err) => {
@@ -159,10 +167,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let mut json:&str = "{}";
     let mut update_db = false;
-    let op = web.param("op").unwrap_or_default();
     let res;
     let code_str: String;
-    match op.as_str() {
+    match op {
         "lsns" => { // list of namespaces
             res = format!("[{}]", namespaces.keys().map(|k| format!(r#""{}""#, json_encode(k))).collect::<Vec<_>>().join(","));
             json = &res
@@ -331,8 +338,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-        "vers" => {code_str = format!(r#"{{"version":"v{VERSION}","ok":true}}"#);
-            json = &code_str;},
         _ => { // op error
             json = r#"{"error":"unknown op"}"#;
         }
