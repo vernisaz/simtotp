@@ -1,7 +1,7 @@
-/* Generating TOTP in Rust involves implementing the algorithm described in RFC 6238. This typically uses the HMAC-SHA1 cryptographic function along with a time component.
-Below is an example of Rust code for generating a TOTP.
-*/
-// src/main.rs
+#![allow(clippy::unit_arg)]
+/// Generating TOTP in Rust involves implementing the algorithm described in RFC 6238. This typically uses the HMAC-SHA1 cryptographic function along with a time component.
+///Below is an example of Rust code for generating a TOTP.
+/// src/main.rs
 extern crate base32;
 extern crate simweb;
 extern crate simjson;
@@ -377,18 +377,15 @@ fn read_db<'a>(home: &'a PathBuf, password: &'a str) -> Result<HashMap<String, H
                 JsonData::Data(ns) => {
                     for (key, value) in ns.iter() {
                         if key.is_empty() { continue}
-                        match value {
-                            JsonData::Data(acn) => {
-                                let mut a_res = HashMap::new();
-                                for (a_key, a_value) in acn.iter() {
-                                    if a_key.is_empty() { continue }
-                                    if let JsonData::Text(secret) = a_value {
-                                         a_res.insert(a_key.to_string(), secret.to_string());
-                                     }
-                                }
-                                res.insert(key.to_string(), a_res);
+                        if let JsonData::Data(acn) = value {
+                            let mut a_res = HashMap::new();
+                            for (a_key, a_value) in acn.iter() {
+                                if a_key.is_empty() { continue }
+                                if let JsonData::Text(secret) = a_value {
+                                     a_res.insert(a_key.to_string(), secret.to_string());
+                                 }
                             }
-                            _ => ()
+                            res.insert(key.to_string(), a_res);
                         }
                     }
                 }
