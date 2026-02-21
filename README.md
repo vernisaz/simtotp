@@ -70,7 +70,7 @@ need to generate a code after.
 If you lost or forgot the password, then execute the `uninstall` script and then fill in the
 application data again. It's recommended to create a backup copy of the data and store 
 on a flash drive or other secured backup storage with easy to remember or no password and then, 
-use it in a case of emergency.
+use it in a case of an emergency.
 
 The application has benefits against PWA as [pwa-otp](https://github.com/maxerenberg/pwa-otp), because
 it can be shared between several devices. It makes it an ideal for a private cloud.
