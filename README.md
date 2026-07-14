@@ -36,12 +36,12 @@ containing a fully qualified _common config_ directory path.
 The file has to be in the same directory as *simtotp* executable. CGI app can't obtain the directory
 from the environment, because it runs sandboxed.
 
-Any other web server capable to run CGI scripts can be also used.
+Any other web server capable to run CGI scripts can also be used.
 
 ## building
 In case if no Rust executable for your platform or you like to build everything by yourself, you will need to:
 
-1. obtain [rb](https://github.com/vernisaz/rust_bee/releases/tag/v1.15.06) or build it from [source](https://github.com/vernisaz/rust_bee)
+1. obtain [rb](https://github.com/vernisaz/rust_bee/releases/tag/v1.16.01) or build it from [source](https://github.com/vernisaz/rust_bee)
 2. clone [base32](https://github.com/andreasots/base32/tree/master), [SimTime](https://github.com/vernisaz/simtime),
 [simweb](https://github.com/vernisaz/simweb),
 [simjson](https://github.com/vernisaz/simjson), [SimConfig](https://github.com/vernisaz/simconfig),
@@ -62,10 +62,10 @@ after unzipping the package to avoid a port conflict.
 An access URL looks like: `http://localhost:3000/totp/`, the ending slash is essential.
 
 ## usage
-The password is used for encryption of the stored data. Select any, and then use it when work with the application. 
+A password is used for encryption of the stored data. Select any, and then use it when work with the application. 
 
 The secret is stored under **namespace/account**. Select the desired **namespace/account** when you 
-need to generate a code after.
+need to generate a code after, a secret will be automaticallly retrieved from the database.
 
 If you lost or forgot the password, then execute the `uninstall` script and then fill in the
 application data again. It's recommended to create a backup copy of the data and store 
