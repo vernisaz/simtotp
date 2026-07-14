@@ -262,31 +262,31 @@
         <section>
         <div id="passwordSec">
             <label for="password">Password</label>
-            <input type="password" name="password" required  autofocus/>
-            <button type="button" onclick="changePassword()">⚡</button>
+            <input type="password" name="password" title="Specify a password for accounts database" required  autofocus/>
+            <button type="button" onclick="changePassword()" title="Use the button to change a password">⚡</button>
         </div>
         <div id="namespaces">
             <label for="namespace">Namespace</label>
-            <input type="text" id="namespace" list="namespaceName" />
+            <input type="text" id="namespace" list="namespaceName" title="Specify a namespace or select it from available ones"/>
             <datalist id="namespaceName" size="3" required></datalist>
         </div>
         <div id="accounts">
             <label for="account">Account</label>
-            <input type="text" id="account" list="accountName" />
+            <input type="text" id="account" list="accountName" title="Specify an account or select it from available ones"/>
             <datalist id="accountName" size="6" required></datalist>
         </div>
         <div id="secretsecret">
             <label for="secret">Secret</label>
-            <input type="password" id="secret" />
+            <input type="password" id="secret" title="Secify a secret key here for the provided account and then press 'Apply' to get it stored in the database"/>
         </div>
         </section>
         <section>
-            <button type="button" onclick="loadNamespaces()">Update</button>
+            <button type="button" onclick="loadNamespaces()" title="Specify a password and then use the button to get accounts information">Update</button>
             <button type="button" onclick="gen()" style="font-weight: bold;padding:6px;">Generate</button>
             <button type="button" onclick="update()">Apply</button>
             <button type="button" onclick="del()">Delete</button>
-            <button type="button" title="download datasheet with secret keys" onclick="download()">📥</button>
-            <button type="button" title="upload datasheet with secret keys" onclick="upload()">📤</button>
+            <button type="button" title="Download datasheet with secret keys" onclick="download()">📥</button>
+            <button type="button" title="Upload datasheet with secret keys" onclick="upload()">📤</button>
         </section>
         <section>
             <div id="code"></div><button type="button" id="cbd" onclick="copyClbd()" hidden>📋</button>
